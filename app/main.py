@@ -2,13 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.constants.paths import UPLOAD_DIRECTORY
-from app.routes import user, study, note
+from app.exceptions.exception_handlers import setup_exception_handlers
+from app.routes import study
 
 app = FastAPI(
     title="Study Buddy API", description="API for managing study resources and notes"
 )
 app.mount("/files", StaticFiles(directory=UPLOAD_DIRECTORY), name="uploads")
-
+# Setup exception handlers
+setup_exception_handlers(app)
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -19,9 +21,7 @@ app.add_middleware(
 )
 
 # Include routers for different services
-# app.include_router(user.router, prefix="/users", tags=["users"])
 app.include_router(study.router, prefix="/studies", tags=["studies"])
-# app.include_router(note.router, prefix="/notes", tags=["notes"])
 
 
 @app.get("/")
