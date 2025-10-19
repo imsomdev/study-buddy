@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 type FileType = 'pdf' | 'docx' | 'txt' | null;
 
@@ -10,7 +10,9 @@ const FileUpload = () => {
   const [fileType, setFileType] = useState<FileType>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploadComplete, setIsUploadComplete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
   const validateFile = (file: File): boolean => {
     const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
@@ -33,7 +35,7 @@ const FileUpload = () => {
         setFile(droppedFile);
         detectFileType(droppedFile);
       } else {
-        alert('Please upload a PDF, DOCX, or TXT file.');
+        setNotification({type: 'error', message: 'Please upload a PDF, DOCX, or TXT file.'});
       }
     }
   }, []);
@@ -55,7 +57,7 @@ const FileUpload = () => {
         setFile(selectedFile);
         detectFileType(selectedFile);
       } else {
-        alert('Please upload a PDF, DOCX, or TXT file.');
+        setNotification({type: 'error', message: 'Please upload a PDF, DOCX, or TXT file.'});
       }
     }
   };
@@ -84,44 +86,117 @@ const FileUpload = () => {
     setFileType(null);
     setIsUploading(false);
     setUploadProgress(0);
+    setIsUploadComplete(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
-  const simulateUpload = () => {
+  const handleActualUpload = async () => {
     if (!file) return;
     
     setIsUploading(true);
     setUploadProgress(0);
     
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress((prevProgress) => {
-        if (prevProgress >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setIsUploading(false);
-            // Here you would normally handle the actual file upload
-            // For now, we just show a completion message
-            alert(`${file.name} uploaded successfully!`);
-          }, 500);
-          return 100;
+    // Simulate upload progress for better UX
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 95) {
+          clearInterval(progressInterval);
+          return 95; // Keep at 95% until actual upload completes
         }
-        return prevProgress + 10;
+        return prev + 5;
       });
     }, 200);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('http://localhost:8000/api/v1/uploadfile/', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Upload successful:', result);
+        setNotification({type: 'success', message: `${file.name} uploaded successfully!`});
+        
+        // Set upload complete to show the post-upload screen
+        setTimeout(() => {
+          setIsUploading(false);
+          setIsUploadComplete(true);
+        }, 500);
+      } else {
+        const errorData = await response.json();
+        console.error('Upload failed:', errorData);
+        setNotification({type: 'error', message: `Upload failed: ${errorData.detail || 'Unknown error'}`});
+        setIsUploading(false);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      clearInterval(progressInterval);
+      setNotification({type: 'error', message: `Upload failed with error: ${error.message}`});
+      setIsUploading(false);
+    }
   };
+
+  const handleViewFile = () => {
+    if (file) {
+      // Create a temporary URL for the file and open it
+      const fileURL = URL.createObjectURL(file);
+      window.open(fileURL, '_blank');
+    }
+  };
+
+  const handleStartJourney = () => {
+    // Here you would implement the functionality to start the learning journey
+    // This would typically involve generating questions from the uploaded file
+    setNotification({type: 'success', message: 'Starting your learning journey...'});
+  };
+
+  // Function to close the notification
+  const closeNotification = () => {
+    setNotification(null);
+  };
+
+  // Auto-close notification after 5 seconds
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">Study Buddy</h1>
-        <p className="text-lg text-gray-600">Upload your study materials in seconds</p>
-      </div>
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg text-white max-w-sm ${
+          notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+        }`}>
+          <div className="flex justify-between items-start">
+            <span>{notification.message}</span>
+            <button 
+              onClick={closeNotification}
+              className="ml-4 text-white focus:outline-none"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-lg p-6">
-        {!file ? (
+        {!file && !isUploadComplete ? (
           <div 
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
               isDragActive 
@@ -162,6 +237,9 @@ const FileUpload = () => {
               <p className="mt-4 text-sm text-gray-500">
                 Supports PDF, DOCX, and TXT files
               </p>
+              <p className="mt-2 text-sm text-gray-600 italic">
+                Upload here to generate questions and study materials
+              </p>
             </div>
             <input 
               type="file" 
@@ -198,7 +276,62 @@ const FileUpload = () => {
               <p className="text-sm text-gray-600">{uploadProgress}%</p>
             </div>
           </div>
+        ) : isUploadComplete ? (
+          // Post upload screen
+          <div className="border rounded-lg p-6 bg-gradient-to-br from-indigo-50 to-cyan-50">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Upload Successful!</h2>
+              <p className="text-gray-600">Your file has been processed successfully</p>
+            </div>
+
+            <div className="text-center mb-8">
+              <p className="text-lg text-gray-700 mb-4">
+                What would you like to do next with <span className="font-semibold">{file?.name}</span>?
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={handleViewFile}
+                className="py-3 px-4 bg-white border border-indigo-300 text-indigo-700 font-medium rounded-lg hover:bg-indigo-50 transition-colors flex flex-col items-center"
+              >
+                <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                <span>View File</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleStartJourney}
+                className="py-3 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors flex flex-col items-center"
+              >
+                <svg className="w-6 h-6 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                <span>Start Learning Journey</span>
+              </button>
+            </div>
+
+            <div className="mt-8 text-center">
+              <button
+                type="button"
+                onClick={resetUpload}
+                className="text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                Upload Another File
+              </button>
+            </div>
+          </div>
         ) : (
+          // File selected but not uploaded yet
           <div className="border rounded-lg p-6 bg-gray-50">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
@@ -245,7 +378,7 @@ const FileUpload = () => {
             <div className="mt-6">
               <button
                 type="button"
-                onClick={simulateUpload}
+                onClick={handleActualUpload}
                 disabled={isUploading}
                 className="w-full py-3 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-75"
               >
