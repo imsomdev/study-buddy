@@ -1,16 +1,40 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 type FileType = 'pdf' | 'docx' | 'txt' | null;
 
+// Define the question type based on the schema
+type Choice = {
+  id: string;
+  text: string;
+};
+
+type Question = {
+  id: number;
+  question: string;
+  choices: Choice[];
+  correct_answer: string;
+  explanation?: string;
+};
+
+type MCQGenerationResponse = {
+  filename: string;
+  page_count: number;
+  questions: Question[];
+  message: string;
+};
+
 const FileUpload = () => {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const [fileType, setFileType] = useState<FileType>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploadComplete, setIsUploadComplete] = useState(false);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
@@ -87,6 +111,7 @@ const FileUpload = () => {
     setIsUploading(false);
     setUploadProgress(0);
     setIsUploadComplete(false);
+    setIsGeneratingQuestions(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -153,10 +178,59 @@ const FileUpload = () => {
     }
   };
 
-  const handleStartJourney = () => {
-    // Here you would implement the functionality to start the learning journey
-    // This would typically involve generating questions from the uploaded file
-    setNotification({type: 'success', message: 'Starting your learning journey...'});
+  const handleStartJourney = async () => {
+    if (!file) return;
+    
+    setIsGeneratingQuestions(true);
+    
+    try {
+      // First, we need to upload the file to get its URL
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const uploadResponse = await fetch('http://localhost:8000/api/v1/uploadfile/', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.detail || 'Upload failed');
+      }
+      
+      const uploadResult = await uploadResponse.json();
+      
+      // Now generate questions using the file URL
+      const generateResponse = await fetch('http://localhost:8000/api/v1/generate-mcq/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          file_url: uploadResult.file_url,
+          num_questions: 5, // Default number of questions per page
+        }),
+      });
+      
+      if (!generateResponse.ok) {
+        const errorData = await generateResponse.json();
+        throw new Error(errorData.detail || 'Question generation failed');
+      }
+      
+      const result: MCQGenerationResponse = await generateResponse.json();
+      console.log('Questions generated:', result);
+      
+      // Store the questions in sessionStorage and navigate to the questions page
+      sessionStorage.setItem('generatedQuestions', JSON.stringify(result));
+      setNotification({type: 'success', message: `Questions generated successfully from ${result.page_count} pages!`});
+      
+      // Navigate to the questions page
+      router.push('/questions');
+    } catch (error) {
+      console.error('Question generation error:', error);
+      setNotification({type: 'error', message: `Failed to generate questions: ${error.message}`});
+      setIsGeneratingQuestions(false);
+    }
   };
 
   // Function to close the notification
@@ -274,6 +348,27 @@ const FileUpload = () => {
                 ></div>
               </div>
               <p className="text-sm text-gray-600">{uploadProgress}%</p>
+            </div>
+          </div>
+        ) : isGeneratingQuestions ? (
+          // Question generation animation
+          <div className="border rounded-lg p-6 bg-gray-50">
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="relative w-24 h-24 mb-6">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-full bg-indigo-100 animate-ping"></div>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <svg className="w-12 h-12 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                  </svg>
+                </div>
+              </div>
+              
+              <p className="text-xl font-medium text-gray-800 mb-2">Generating Questions</p>
+              <p className="text-gray-600 mb-6">Please wait while we create study materials for you...</p>
+              
+              <div className="w-16 h-16 border-t-4 border-indigo-600 border-solid rounded-full animate-spin"></div>
             </div>
           </div>
         ) : isUploadComplete ? (
