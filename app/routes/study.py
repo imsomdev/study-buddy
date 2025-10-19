@@ -1,4 +1,5 @@
 import os
+from urllib.parse import unquote
 
 from fastapi import APIRouter, File, Query, Request, UploadFile, status
 
@@ -11,6 +12,7 @@ from app.exceptions.custom_exceptions import (
 )
 from app.schemas.study import (
     MCQGenerationResponse,
+    MCQRequest,
     UploadResponse,
 )
 from app.services.extraction_service import extract_text_from_file
@@ -68,12 +70,7 @@ async def create_upload_file(file: UploadFile = File(...), request: Request = Re
 
 
 @router.post("/generate-mcq/", response_model=MCQGenerationResponse)
-async def generate_mcq_questions(
-    file_url: str,
-    num_questions: int = Query(
-        3, ge=1, le=10, description="Number of questions to generate per page"
-    ),
-):
+async def generate_mcq_questions(request: MCQRequest):
     """
     Generate MCQ questions from an existing file URL.
 
@@ -85,7 +82,7 @@ async def generate_mcq_questions(
         MCQGenerationResponse: JSON response with MCQ questions
     """
     # Extract filename from the URL
-    filename = file_url.split("/")[-1]
+    filename = unquote(request.file_url.split("/")[-1])
 
     # Validate the file extension
     file_extension = os.path.splitext(filename)[1].lower()
@@ -107,7 +104,7 @@ async def generate_mcq_questions(
 
         # Generate MCQ questions from the extracted text
         questions = await generate_mcq_questions_from_pages(
-            pages_text, num_questions_per_page=num_questions
+            pages_text, num_questions_per_page=request.num_questions
         )
 
     except Exception as e:

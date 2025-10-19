@@ -66,3 +66,8 @@ class MCQGenerationResponse(BaseModel):
     page_count: int
     questions: List[MCQQuestion]
     message: str = "MCQ questions generated successfully"
+
+
+class MCQRequest(BaseModel):
+    file_url: str
+    num_questions: int = 3  # Default value, optional
