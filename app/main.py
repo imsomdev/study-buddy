@@ -21,7 +21,7 @@ app.add_middleware(
 )
 
 # Include routers for different services
-app.include_router(study.router, prefix="/studies", tags=["studies"])
+app.include_router(study.router, prefix="/api/v1", tags=["studies"])
 
 
 @app.get("/")
