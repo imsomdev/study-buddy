@@ -9,6 +9,7 @@ from app.schemas.study import MCQChoice, MCQQuestion
 
 # Load environment variables from .env file
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # Initialize Cerebras client with API key from environment variable
@@ -101,6 +102,7 @@ async def generate_mcq_questions_from_pages(
                     choices=choices,
                     correct_answer=question.get("correct_answer", ""),
                     explanation=question.get("explanation", ""),
+                    page_number=page_idx + 1,
                 )
 
                 all_questions.append(mcq_question)

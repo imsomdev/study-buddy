@@ -55,6 +55,7 @@ class MCQQuestion(BaseModel):
     choices: List[MCQChoice]
     correct_answer: str  # ID of the correct choice
     explanation: str = ""
+    page_number: int = None
 
 
 class MCQGenerationResponse(BaseModel):
