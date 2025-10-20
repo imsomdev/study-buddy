@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from app.constants.paths import UPLOAD_DIRECTORY
 from app.exceptions.exception_handlers import setup_exception_handlers
 from app.routes import study
+from app.database import create_tables
 
 app = FastAPI(
     title="Study Buddy API", description="API for managing study resources and notes"
@@ -19,6 +20,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Initialize database tables
+create_tables()
 
 # Include routers for different services
 app.include_router(study.router, prefix="/api/v1", tags=["studies"])
