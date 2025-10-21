@@ -1,13 +1,17 @@
+import asyncio
 import os
-from urllib.parse import unquote
+import threading
 from typing import List
+from urllib.parse import unquote
 
-from fastapi import APIRouter, File, Query, Request, UploadFile, status, Depends
+from fastapi import APIRouter, Depends, File, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.constants.file_types import ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
 from app.constants.paths import UPLOAD_DIRECTORY
 from app.database.config import get_db
+from app.database.models import MCQQuestion as DBMCQQuestion
+from app.database.models import StudyDocument
 from app.exceptions.custom_exceptions import (
     FileUploadException,
     FileValidationException,
@@ -15,15 +19,16 @@ from app.exceptions.custom_exceptions import (
 )
 from app.schemas.study import (
     MCQGenerationResponse,
+    MCQQuestion,
     MCQRequest,
     UploadResponse,
-    MCQQuestion,
+    AnswerValidationRequest,
+    AnswerValidationResponse,
 )
 from app.services.extraction_service import extract_text_from_file
 from app.services.llm_service import (
     generate_mcq_questions_from_pages,
 )
-from app.database.models import StudyDocument, MCQQuestion as DBMCQQuestion
 
 router = APIRouter()
 
@@ -91,11 +96,6 @@ async def create_upload_file(
         content_type=file.content_type,
         file_url=file_url,
     )
-
-
-import asyncio
-from typing import List
-import threading
 
 
 @router.post("/generate-mcq/", response_model=MCQGenerationResponse)
@@ -190,7 +190,7 @@ async def generate_mcq_questions(request: MCQRequest, db: Session = Depends(get_
                         .filter(StudyDocument.filename == filename)
                         .first()
                     )
-                    
+
                     if not background_document:
                         print(f"Document {filename} not found in background session")
                         return
@@ -286,6 +286,7 @@ async def get_mcq_questions(document_filename: str, db: Session = Depends(get_db
     for db_question in db_questions:
         # Parse the choices JSON string
         import json
+
         from app.schemas.study import MCQChoice
 
         try:
@@ -294,7 +295,8 @@ async def get_mcq_questions(document_filename: str, db: Session = Depends(get_db
                 MCQChoice(id=choice["id"], text=choice["text"])
                 for choice in choices_json
             ]
-        except:
+        except Exception as e:
+            print(f"Error parsing choices JSON: {str(e)}")
             # If parsing fails, create empty choices
             choices = []
 
@@ -309,3 +311,152 @@ async def get_mcq_questions(document_filename: str, db: Session = Depends(get_db
         questions.append(question)
 
     return questions
+
+
+@router.post("/validate-answer/", response_model=AnswerValidationResponse)
+async def validate_answer(request: AnswerValidationRequest, db: Session = Depends(get_db)):
+    """
+    Validate a user's answer for a specific question.
+
+    Args:
+        request: Contains question_id and user_answer
+        db: Database session
+
+    Returns:
+        AnswerValidationResponse with correctness and explanation
+    """
+    # Get the question from the database based on the question_id
+    db_question = (
+        db.query(DBMCQQuestion)
+        .filter(DBMCQQuestion.id == request.question_id)
+        .first()
+    )
+    if not db_question:
+        raise FileValidationException(f"Question not found in database: {request.question_id}")
+
+    # Check if the user's answer is correct
+    is_correct = db_question.correct_answer == request.selected_choice
+    
+    # Parse the choices from JSON strings back to proper format
+    import json
+    from app.schemas.study import MCQChoice
+
+    try:
+        choices_json = json.loads(db_question.choices.replace("'", '"'))
+        choices = [
+            MCQChoice(id=choice["id"], text=choice["text"])
+            for choice in choices_json
+        ]
+    except Exception as e:
+        print(f"Error parsing choices JSON: {str(e)}")
+        # If parsing fails, create empty choices
+        choices = []
+
+    return AnswerValidationResponse(
+        question_id=db_question.id,
+        is_correct=is_correct,
+        correct_answer=db_question.correct_answer,
+        explanation=db_question.explanation,
+        choices=choices,
+        question=db_question.question
+    )
+
+
+@router.get("/mcq-questions/{document_filename}/{question_index}", response_model=MCQQuestion)
+async def get_specific_mcq_question(document_filename: str, question_index: int, db: Session = Depends(get_db)):
+    """
+    Retrieve a specific MCQ question for a document by index.
+
+    Args:
+        document_filename: The filename of the document to retrieve questions for
+        question_index: The zero-based index of the question to retrieve
+        db: Database session
+
+    Returns:
+        A single MCQQuestion object at the specified index
+    """
+    # Get the document from the database based on the filename
+    db_document = (
+        db.query(StudyDocument)
+        .filter(StudyDocument.filename == document_filename)
+        .first()
+    )
+    if not db_document:
+        raise FileValidationException(
+            f"Document not found in database: {document_filename}"
+        )
+
+    # Retrieve MCQ questions for this document ordered by id
+    db_questions = (
+        db.query(DBMCQQuestion)
+        .filter(DBMCQQuestion.document_id == db_document.id)
+        .order_by(DBMCQQuestion.id)
+        .all()
+    )
+
+    # Check if the index is valid
+    if question_index < 0 or question_index >= len(db_questions):
+        raise FileValidationException(
+            f"Question index {question_index} is out of range. Available range: 0 to {len(db_questions) - 1}"
+        )
+
+    db_question = db_questions[question_index]
+
+    # Parse the choices from JSON strings back to proper format
+    import json
+    from app.schemas.study import MCQChoice
+
+    try:
+        choices_json = json.loads(db_question.choices.replace("'", '"'))
+        choices = [
+            MCQChoice(id=choice["id"], text=choice["text"])
+            for choice in choices_json
+        ]
+    except Exception as e:
+        print(f"Error parsing choices JSON: {str(e)}")
+        # If parsing fails, create empty choices
+        choices = []
+
+    # Create MCQQuestion object with parsed data
+    question = MCQQuestion(
+        id=db_question.id,
+        question=db_question.question,
+        choices=choices,
+        correct_answer=db_question.correct_answer,
+        explanation=db_question.explanation,
+        page_number=db_question.page_number
+    )
+    return question
+
+
+@router.get("/mcq-question-count/{document_filename}", response_model=int)
+async def get_mcq_question_count(document_filename: str, db: Session = Depends(get_db)):
+    """
+    Retrieve the total count of MCQ questions for a specific document.
+
+    Args:
+        document_filename: The filename of the document to count questions for
+        db: Database session
+
+    Returns:
+        The total number of questions for the specified document
+    """
+    # Get the document from the database based on the filename
+    db_document = (
+        db.query(StudyDocument)
+        .filter(StudyDocument.filename == document_filename)
+        .first()
+    )
+    if not db_document:
+        raise FileValidationException(
+            f"Document not found in database: {document_filename}"
+        )
+
+    # Count MCQ questions for this document
+    question_count = (
+        db.query(DBMCQQuestion)
+        .filter(DBMCQQuestion.document_id == db_document.id)
+        .count()
+    )
+
+    return question_count

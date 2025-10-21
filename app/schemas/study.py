@@ -72,3 +72,23 @@ class MCQGenerationResponse(BaseModel):
 class MCQRequest(BaseModel):
     file_url: str
     num_questions: int = 3  # Default value, optional
+
+
+class AnswerValidationRequest(BaseModel):
+    """
+    Schema for validating a user's answer to a question.
+    """
+    question_id: int
+    selected_choice: str
+
+
+class AnswerValidationResponse(BaseModel):
+    """
+    Schema for the response returned after validating a user's answer.
+    """
+    question_id: int
+    is_correct: bool
+    correct_answer: str
+    explanation: str = ""
+    choices: List[MCQChoice]
+    question: str
