@@ -220,6 +220,13 @@ const FileUpload = () => {
       const result: MCQGenerationResponse = await generateResponse.json();
       console.log('Questions generated:', result);
       
+      // Clear any existing session storage from previous attempts
+      sessionStorage.removeItem('currentQuestionIndex');
+      sessionStorage.removeItem('selectedChoice');
+      sessionStorage.removeItem('isAnswerSubmitted');
+      sessionStorage.removeItem('isCorrect');
+      sessionStorage.removeItem('validationResult');
+      
       // Store the questions in sessionStorage and navigate to the questions page
       sessionStorage.setItem('generatedQuestions', JSON.stringify(result));
       setNotification({type: 'success', message: `Questions generated successfully from ${result.page_count} pages!`});
