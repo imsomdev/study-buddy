@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { API_BASE_URL, API_ENDPOINTS } from '@/lib/api';
 
 // Define the question type based on the schema
 type Choice = {
@@ -108,7 +109,7 @@ const QuestionsPage = () => {
     if (questionsData?.filename) {
       const fetchQuestionCount = async () => {
         try {
-          const response = await fetch(`http://localhost:8000/api/v1/mcq-question-count/${encodeURIComponent(questionsData.filename)}`);
+          const response = await fetch(API_ENDPOINTS.mcqQuestionCount(questionsData.filename));
           if (response.ok) {
             const count: number = await response.json();
             setTotalQuestions(count);
@@ -134,7 +135,7 @@ const QuestionsPage = () => {
       const fetchQuestion = async () => {
         setQuestionsLoading(true);
         try {
-          const response = await fetch(`http://localhost:8000/api/v1/mcq-questions/${encodeURIComponent(questionsData.filename)}/${currentQuestionIndex}`);
+          const response = await fetch(API_ENDPOINTS.mcqQuestions(questionsData.filename, currentQuestionIndex));
           if (response.ok) {
             const question = await response.json();
             // Update the questions array with the fetched question at the current index
@@ -218,7 +219,7 @@ const QuestionsPage = () => {
     if (!selectedChoice || !questionsData?.questions[currentQuestionIndex]) return;
 
     try {
-      const response = await fetch('http://localhost:8000/api/v1/validate-answer/', {
+      const response = await fetch(API_ENDPOINTS.validateAnswer, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
