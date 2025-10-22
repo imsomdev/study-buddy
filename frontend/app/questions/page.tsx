@@ -262,12 +262,12 @@ const QuestionsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-16 h-16 border-t-4 border-indigo-600 border-solid rounded-full animate-spin mx-auto"></div>
-            <p className="mt-4 text-lg text-gray-600">Loading your questions...</p>
+          <div className="text-center glass-card p-6 rounded-xl">
+            <div className="w-12 h-12 border-t-4 border-indigo-400 border-solid rounded-full animate-spin mx-auto"></div>
+            <p className="mt-3 text-base text-gray-200">Loading your questions...</p>
           </div>
         </div>
         <Footer />
@@ -277,15 +277,15 @@ const QuestionsPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Questions</h2>
-            <p className="text-gray-600 mb-6">{error}</p>
+          <div className="text-center glass-card p-6 rounded-xl max-w-sm">
+            <h2 className="text-xl font-bold text-red-400 mb-3">Error Loading Questions</h2>
+            <p className="text-gray-300 mb-4">{error}</p>
             <button
               onClick={handleBackToUpload}
-              className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              className="px-5 py-2 glass-button text-white font-medium rounded-xl hover:bg-white/20 transition-all"
             >
               Back to Upload
             </button>
@@ -298,15 +298,15 @@ const QuestionsPage = () => {
 
   if (!questionsData || questionsData.questions.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">No Questions Found</h2>
-            <p className="text-gray-600 mb-6">Please generate questions first.</p>
+          <div className="text-center glass-card p-6 rounded-xl max-w-sm">
+            <h2 className="text-xl font-bold text-white mb-3">No Questions Found</h2>
+            <p className="text-gray-300 mb-4">Please generate questions first.</p>
             <button
               onClick={handleBackToUpload}
-              className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              className="px-5 py-2 glass-button text-white font-medium rounded-xl hover:bg-white/20 transition-all"
             >
               Back to Upload
             </button>
@@ -321,12 +321,12 @@ const QuestionsPage = () => {
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Loading Question...</h2>
-            <div className="w-16 h-16 border-t-4 border-indigo-600 border-solid rounded-full animate-spin mx-auto"></div>
+          <div className="text-center glass-card p-6 rounded-xl">
+            <h2 className="text-xl font-bold text-white mb-3">Loading Question...</h2>
+            <div className="w-12 h-12 border-t-4 border-indigo-400 border-solid rounded-full animate-spin mx-auto"></div>
           </div>
         </div>
         <Footer />
@@ -335,80 +335,80 @@ const QuestionsPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
       {/* Decorative background elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
-        <div className="absolute top-40 right-20 w-72 h-72 bg-yellow-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
+        <div className="absolute top-40 right-20 w-72 h-72 bg-indigo-500/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-cyan-500/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
       </div>
 
       <Navbar />
       
-      <main className="flex-grow py-12 relative z-10">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="text-center mb-10">
-            <h1 className="text-4xl font-bold text-gray-800 mb-4">Learning Journey</h1>
-            <p className="text-lg text-gray-600">{questionsData.message}</p>
-            <p className="text-gray-500 mt-2">
+      <main className="flex-grow pt-16 pb-12 relative z-10">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-3">Learning Journey</h1>
+            <p className="text-base text-gray-200">{questionsData.message}</p>
+            <p className="text-gray-300 mt-2">
               Generated from {questionsData.filename} ({questionsData.page_count} pages)
             </p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">
+          <div className="glass-card p-5 mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-white">
                 Question {currentQuestionIndex + 1} of {totalQuestions}
               </h2>
               <button
                 onClick={handleBackToUpload}
-                className="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-3 py-1.5 glass-button text-white font-medium rounded-lg hover:bg-white/20 transition-all text-sm"
               >
                 Upload Another File
               </button>
             </div>
 
             {questionsLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="w-16 h-16 border-t-4 border-indigo-600 border-solid rounded-full animate-spin mx-auto"></div>
+              <div className="flex justify-center items-center py-6">
+                <div className="w-12 h-12 border-t-4 border-indigo-400 border-solid rounded-full animate-spin mx-auto"></div>
               </div>
             ) : (
-              <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800">
+              <div className="glass-question rounded-lg p-4">
+                <div className="mb-4">
+                  <h3 className="text-base font-semibold text-white">
                     {currentQuestion.question}
                   </h3>
                 </div>
                 
-                <div className="space-y-3 mb-6">
+                <div className="space-y-2.5 mb-4">
                   {currentQuestion.choices.map((choice) => (
                     <div 
                       key={choice.id}
                       onClick={() => handleChoiceSelect(choice.id)}
-                      className={`flex items-start p-4 rounded-lg cursor-pointer transition-colors ${
+                      className={`flex items-start p-3 rounded-lg cursor-pointer transition-all ${
                         selectedChoice === choice.id
                           ? isAnswerSubmitted
                             ? choice.id === currentQuestion.correct_answer
-                              ? 'bg-green-100 border-2 border-green-500'
-                              : 'bg-red-100 border-2 border-red-500'
-                            : 'bg-indigo-100 border-2 border-indigo-500'
-                          : 'bg-white border border-gray-200 hover:bg-gray-50'
+                              ? 'glass-choice correct'
+                              : 'glass-choice incorrect'
+                            : 'glass-choice selected'
+                          : 'glass-choice'
                       }`}
                     >
                       <span 
-                        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
+                        className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mr-2 text-xs ${
                           selectedChoice === choice.id
                             ? isAnswerSubmitted
                               ? choice.id === currentQuestion.correct_answer
-                                ? 'bg-green-500 text-white'
-                                : 'bg-red-500 text-white'
-                              : 'bg-indigo-500 text-white'
-                            : 'bg-gray-200 text-gray-700'
+                                ? 'bg-green-400 text-white'
+                                : 'bg-red-400 text-white'
+                              : 'bg-indigo-400 text-white'
+                            : 'bg-white/30 text-white'
                         }`}
                       >
                         {choice.id}
                       </span>
-                      <span className="text-gray-700 flex-grow">
+                      <span className="text-gray-200 flex-grow text-sm">
                         {choice.text}
                       </span>
                     </div>
@@ -420,45 +420,45 @@ const QuestionsPage = () => {
                     <button
                       onClick={handleSubmitAnswer}
                       disabled={!selectedChoice}
-                      className={`px-6 py-3 font-medium rounded-lg transition-colors ${
+                      className={`px-4 py-2 font-medium rounded-lg transition-all text-sm ${
                         selectedChoice
-                          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          ? 'bg-indigo-600/80 text-white hover:bg-indigo-600/90 backdrop-blur-sm'
+                          : 'bg-gray-500/40 text-gray-400 cursor-not-allowed'
                       }`}
                     >
                       Check Answer
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className={`p-4 rounded-lg ${
-                      isCorrect ? 'bg-green-100 border border-green-300' : 'bg-red-100 border border-red-300'
+                  <div className="space-y-3">
+                    <div className={`p-3 rounded-lg ${
+                      isCorrect ? 'glass-choice correct' : 'glass-choice incorrect'
                     }`}>
-                      <p className="font-medium">
+                      <p className="font-medium text-white text-sm">
                         {isCorrect ? '✓ Correct!' : '✗ Incorrect!'}
                       </p>
                       {!isCorrect && (
-                        <p className="mt-2">
+                        <p className="mt-1.5 text-white text-sm">
                           <span className="font-medium">Correct answer:</span> {currentQuestion.choices.find(c => c.id === currentQuestion.correct_answer)?.text}
                         </p>
                       )}
                     </div>
                     
                     {validationResult?.explanation && (
-                      <div className="p-4 bg-blue-50 rounded-lg">
-                        <p className="font-medium text-blue-800">Explanation:</p>
-                        <p className="mt-1 text-gray-700">{validationResult.explanation}</p>
+                      <div className="glass-choice p-3 rounded-lg">
+                        <p className="font-medium text-indigo-300 text-sm">Explanation:</p>
+                        <p className="mt-1 text-gray-200 text-sm">{validationResult.explanation}</p>
                       </div>
                     )}
                     
-                    <div className="flex justify-between mt-6">
+                    <div className="flex justify-between mt-4">
                       <button
                         onClick={handlePreviousQuestion}
                         disabled={currentQuestionIndex === 0}
-                        className={`px-4 py-2 rounded-lg ${
+                        className={`px-3 py-1.5 rounded-lg ${
                           currentQuestionIndex === 0
-                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            ? 'glass-button bg-gray-500/30 text-gray-400 cursor-not-allowed text-sm'
+                            : 'glass-button text-white hover:bg-white/20 text-sm'
                         }`}
                       >
                         Previous
@@ -467,10 +467,10 @@ const QuestionsPage = () => {
                       <button
                         onClick={handleNextQuestion}
                         disabled={currentQuestionIndex === totalQuestions - 1}
-                        className={`px-4 py-2 rounded-lg ${
+                        className={`px-3 py-1.5 rounded-lg ${
                           currentQuestionIndex === totalQuestions - 1
-                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                            ? 'glass-button bg-gray-500/30 text-gray-400 cursor-not-allowed text-sm'
+                            : 'glass-button text-white hover:bg-white/20 text-sm'
                         }`}
                       >
                         Next Question
@@ -485,7 +485,7 @@ const QuestionsPage = () => {
           <div className="text-center">
             <button
               onClick={handleBackToUpload}
-              className="px-6 py-3 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors"
+              className="px-5 py-2 glass-button text-white font-medium rounded-xl hover:bg-white/20 transition-all text-sm"
             >
               Upload Another File
             </button>

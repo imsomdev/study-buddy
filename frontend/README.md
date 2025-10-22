@@ -1,13 +1,15 @@
 # Study Buddy
 
-A modern single-page application built with Next.js and Tailwind CSS for uploading study materials.
+A modern single-page application built with Next.js and Tailwind CSS for uploading study materials, featuring a sleek glassmorphism UI.
 
 ## Features
 
-- Clean, minimal UI with responsive design
+- Modern glassmorphism UI with frosted glass effects
+- Clean, minimal design with responsive layout
 - File upload with drag-and-drop support
 - Supports PDF, DOCX, and TXT files
 - Mobile-friendly navigation
+- Smooth animations and transitions
 
 ## Getting Started
 

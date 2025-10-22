@@ -288,7 +288,7 @@ const FileUpload = () => {
   }, [notification]);
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-lg mx-auto">
       {/* Notification Toast */}
       {notification && (
         <div
@@ -320,13 +320,13 @@ const FileUpload = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-lg p-6">
+      <div className="glass-card p-4">
         {!file && !isUploadComplete ? (
           <div
-            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+            className={`glass-choice border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${
               isDragActive
-                ? "border-indigo-500 bg-indigo-50"
-                : "border-gray-300 hover:border-indigo-400"
+                ? "border-indigo-300 bg-indigo-500/20"
+                : "border-white/30 hover:border-indigo-300"
             }`}
             onDrop={handleDrop}
             onDragOver={handleDrag}
@@ -334,9 +334,9 @@ const FileUpload = () => {
             onClick={handleUploadClick}
           >
             <div className="flex flex-col items-center justify-center">
-              <div className="mb-4">
+              <div className="mb-3">
                 <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
+                  className="mx-auto h-10 w-10 text-gray-400"
                   stroke="currentColor"
                   fill="none"
                   viewBox="0 0 48 48"
@@ -349,20 +349,20 @@ const FileUpload = () => {
                   />
                 </svg>
               </div>
-              <p className="text-lg font-medium text-gray-700 mb-2">
+              <p className="text-base font-medium text-white mb-1.5">
                 Drag & drop your files here
               </p>
-              <p className="text-gray-500 mb-4">or click to browse</p>
+              <p className="text-gray-300 mb-3">or click to browse</p>
               <button
                 type="button"
-                className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                className="px-4 py-2 glass-button text-white font-medium rounded-lg text-sm transition-all"
               >
                 Browse Files
               </button>
-              <p className="mt-4 text-sm text-gray-500">
+              <p className="mt-3 text-xs text-gray-300">
                 Supports PDF, DOCX, and TXT files
               </p>
-              <p className="mt-2 text-sm text-gray-600 italic">
+              <p className="mt-1.5 text-xs text-gray-400 italic">
                 Upload here to generate questions and study materials
               </p>
             </div>
@@ -376,15 +376,15 @@ const FileUpload = () => {
           </div>
         ) : isUploading ? (
           // Upload animation component
-          <div className="border rounded-lg p-6 bg-gray-50">
-            <div className="flex flex-col items-center justify-center py-8">
-              <div className="relative w-24 h-24 mb-6">
+          <div className="glass-question rounded-lg p-4">
+            <div className="flex flex-col items-center justify-center py-6">
+              <div className="relative w-20 h-20 mb-5">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-20 h-20 rounded-full bg-indigo-100 animate-ping"></div>
+                  <div className="w-16 h-16 rounded-full bg-indigo-500/30 animate-ping"></div>
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <svg
-                    className="w-12 h-12 text-indigo-600"
+                    className="w-10 h-10 text-indigo-300"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -399,33 +399,33 @@ const FileUpload = () => {
                 </div>
               </div>
 
-              <p className="text-xl font-medium text-gray-800 mb-2">
+              <p className="text-lg font-medium text-gray-200 mb-2">
                 Uploading {file.name}
               </p>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-300 mb-5 text-sm">
                 Please wait while we process your file...
               </p>
 
-              <div className="w-full max-w-xs bg-gray-200 rounded-full h-2.5 mb-2">
+              <div className="w-full max-w-xs bg-white/20 rounded-full h-2 mb-2">
                 <div
-                  className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-out"
+                  className="bg-indigo-400 h-2 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${uploadProgress}%` }}
                 ></div>
               </div>
-              <p className="text-sm text-gray-600">{uploadProgress}%</p>
+              <p className="text-xs text-gray-300">{uploadProgress}%</p>
             </div>
           </div>
         ) : isGeneratingQuestions ? (
           // Question generation animation
-          <div className="border rounded-lg p-6 bg-gray-50">
-            <div className="flex flex-col items-center justify-center py-8">
-              <div className="relative w-24 h-24 mb-6">
+          <div className="glass-question rounded-lg p-4">
+            <div className="flex flex-col items-center justify-center py-6">
+              <div className="relative w-20 h-20 mb-5">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-20 h-20 rounded-full bg-indigo-100 animate-ping"></div>
+                  <div className="w-16 h-16 rounded-full bg-indigo-500/30 animate-ping"></div>
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <svg
-                    className="w-12 h-12 text-indigo-600"
+                    className="w-10 h-10 text-indigo-300"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -440,23 +440,23 @@ const FileUpload = () => {
                 </div>
               </div>
 
-              <p className="text-xl font-medium text-gray-800 mb-2">
+              <p className="text-lg font-medium text-gray-200 mb-2">
                 Generating Questions
               </p>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-300 mb-5 text-sm">
                 Please wait while we create study materials for you...
               </p>
 
-              <div className="w-16 h-16 border-t-4 border-indigo-600 border-solid rounded-full animate-spin"></div>
+              <div className="w-14 h-14 border-t-4 border-indigo-400 border-solid rounded-full animate-spin"></div>
             </div>
           </div>
         ) : isUploadComplete ? (
           // Post upload screen
-          <div className="border rounded-lg p-6 bg-gradient-to-br from-indigo-50 to-cyan-50">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="glass-question rounded-lg p-4">
+            <div className="text-center mb-5">
+              <div className="w-14 h-14 bg-green-500/30 rounded-full flex items-center justify-center mx-auto mb-3">
                 <svg
-                  className="w-8 h-8 text-green-600"
+                  className="w-6 h-6 text-green-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -469,29 +469,29 @@ const FileUpload = () => {
                   ></path>
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              <h2 className="text-xl font-bold text-gray-200 mb-2">
                 Upload Successful!
               </h2>
-              <p className="text-gray-600">
+              <p className="text-gray-300 text-sm">
                 Your file has been processed successfully
               </p>
             </div>
 
-            <div className="text-center mb-8">
-              <p className="text-lg text-gray-700 mb-4">
+            <div className="text-center mb-6">
+              <p className="text-base text-gray-200 mb-3">
                 What would you like to do next with{" "}
-                <span className="font-semibold">{file?.name}</span>?
+                <span className="font-semibold text-white">{file?.name}</span>?
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={handleViewFile}
-                className="py-3 px-4 bg-white border border-indigo-300 text-indigo-700 font-medium rounded-lg hover:bg-indigo-50 transition-colors flex flex-col items-center"
+                className="py-2 px-3 glass-button text-white font-medium rounded-lg text-sm transition-all flex flex-col items-center"
               >
                 <svg
-                  className="w-6 h-6 mb-2"
+                  className="w-5 h-5 mb-1.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -515,10 +515,10 @@ const FileUpload = () => {
               <button
                 type="button"
                 onClick={handleStartJourney}
-                className="py-3 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors flex flex-col items-center"
+                className="py-2 px-3 bg-indigo-600/80 text-white font-medium rounded-lg text-sm hover:bg-indigo-600/90 transition-all flex flex-col items-center backdrop-blur-sm"
               >
                 <svg
-                  className="w-6 h-6 mb-2"
+                  className="w-5 h-5 mb-1.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -530,15 +530,15 @@ const FileUpload = () => {
                     d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
                   ></path>
                 </svg>
-                <span>Start Learning Journey</span>
+                <span>Start Learning</span>
               </button>
             </div>
 
-            <div className="mt-8 text-center">
+            <div className="mt-6 text-center">
               <button
                 type="button"
                 onClick={resetUpload}
-                className="text-indigo-600 hover:text-indigo-800 font-medium"
+                className="text-indigo-300 hover:text-indigo-100 font-medium text-sm"
               >
                 Upload Another File
               </button>
@@ -546,18 +546,18 @@ const FileUpload = () => {
           </div>
         ) : (
           // File selected but not uploaded yet
-          <div className="border rounded-lg p-6 bg-gray-50">
+          <div className="glass-question rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <div
-                  className={`mr-4 p-3 rounded-lg ${
+                  className={`mr-3 p-2 rounded-lg ${
                     fileType === "pdf"
-                      ? "bg-red-100 text-red-600"
+                      ? "bg-red-500/30 text-red-300"
                       : fileType === "docx"
-                      ? "bg-blue-100 text-blue-600"
+                      ? "bg-blue-500/30 text-blue-300"
                       : fileType === "txt"
-                      ? "bg-green-100 text-green-600"
-                      : "bg-gray-100 text-gray-600"
+                      ? "bg-green-500/30 text-green-300"
+                      : "bg-gray-500/30 text-gray-300"
                   }`}
                 >
                   {fileType === "pdf" ? (
@@ -611,15 +611,15 @@ const FileUpload = () => {
                   )}
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">{file.name}</p>
-                  <p className="text-sm text-gray-500">
+                  <p className="font-medium text-white">{file.name}</p>
+                  <p className="text-sm text-gray-300">
                     {(file.size / 1024).toFixed(2)} KB
                   </p>
                 </div>
               </div>
               <button
                 onClick={resetUpload}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-300 hover:text-white"
                 title="Remove file"
               >
                 <svg
@@ -642,7 +642,7 @@ const FileUpload = () => {
                 type="button"
                 onClick={handleActualUpload}
                 disabled={isUploading}
-                className="w-full py-3 px-4 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-75"
+                className="w-full py-2.5 px-4 bg-indigo-600/80 text-white font-medium rounded-lg hover:bg-indigo-600/90 transition-all backdrop-blur-sm disabled:opacity-50 text-sm"
               >
                 {isUploading ? "Uploading..." : "Upload File"}
               </button>

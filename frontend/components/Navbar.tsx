@@ -7,20 +7,20 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="bg-white shadow-sm">
+    <nav className="glass fixed top-0 left-0 right-0 z-50 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold text-indigo-600">Study Buddy</span>
+              <span className="text-2xl font-bold text-white">Study Buddy</span>
             </Link>
           </div>
           
-          <div className="hidden md:flex items-center space-x-4">
-            <button className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors">
+          <div className="hidden md:flex items-center space-x-3">
+            <button className="px-4 py-2 glass-button text-white text-sm font-medium rounded-lg hover:bg-white/20 transition-all">
               Login
             </button>
-            <button className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-colors">
+            <button className="px-4 py-2 bg-indigo-600/80 text-white text-sm font-medium rounded-lg hover:bg-indigo-600/90 transition-all backdrop-blur-sm">
               Sign Up
             </button>
           </div>
@@ -28,7 +28,7 @@ const Navbar = () => {
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-indigo-600 focus:outline-none"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-200 hover:text-white focus:outline-none hover:bg-white/10 transition-all"
             >
               <svg
                 className="h-6 w-6"
@@ -50,11 +50,11 @@ const Navbar = () => {
 
       {isMenuOpen && (
         <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <button className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-indigo-600 w-full text-left">
+          <div className="px-2 pt-2 pb-3 space-y-1.5 sm:px-3">
+            <button className="block px-3 py-2 glass-button text-white text-base font-medium rounded-lg w-full text-left hover:bg-white/20 transition-all">
               Login
             </button>
-            <button className="block px-3 py-2 bg-indigo-600 text-white rounded-md text-base font-medium w-full">
+            <button className="block px-3 py-2 bg-indigo-600/80 text-white rounded-lg text-base font-medium w-full backdrop-blur-sm">
               Sign Up
             </button>
           </div>
