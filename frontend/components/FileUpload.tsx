@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { API_BASE_URL, API_ENDPOINTS } from "../lib/api";
+import { API_BASE_URL, API_ENDPOINTS, authenticatedFetch } from "../lib/api";
 
 type FileType = "pdf" | "docx" | "txt" | null;
 
@@ -155,7 +155,7 @@ const FileUpload = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch(API_ENDPOINTS.uploadFile, {
+      const response = await authenticatedFetch(API_ENDPOINTS.uploadFile, {
         method: "POST",
         body: formData,
       });
@@ -214,7 +214,7 @@ const FileUpload = () => {
       const formData = new FormData();
       formData.append("file", file);
 
-      const uploadResponse = await fetch(API_ENDPOINTS.uploadFile, {
+      const uploadResponse = await authenticatedFetch(API_ENDPOINTS.uploadFile, {
         method: "POST",
         body: formData,
       });
@@ -227,7 +227,7 @@ const FileUpload = () => {
       const uploadResult = await uploadResponse.json();
 
       // Now generate questions using the file URL
-      const generateResponse = await fetch(API_ENDPOINTS.generateMcq, {
+      const generateResponse = await authenticatedFetch(API_ENDPOINTS.generateMcq, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
