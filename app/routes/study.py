@@ -4,7 +4,8 @@ import threading
 from typing import List
 from urllib.parse import unquote
 
-from fastapi import APIRouter, Depends, File, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Request, UploadFile, status, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.constants.file_types import ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
@@ -71,7 +72,7 @@ async def create_upload_file(
         contents = await file.read()
         with open(file_location, "wb") as f:
             f.write(contents)
-        file_url = f"{request.base_url}files/{safe_filename}"
+        file_url = f"{request.base_url}api/v1/files/{safe_filename}"
         pages_text = extract_text_from_file(UPLOAD_DIRECTORY + "/" + safe_filename)
         page_count = len(pages_text) if pages_text else 0
 
@@ -351,6 +352,15 @@ async def validate_answer(
     if not db_question:
         raise FileValidationException(f"Question not found in database: {request.question_id}")
 
+    # Verify the question belongs to a document owned by the current user
+    db_document = (
+        db.query(StudyDocument)
+        .filter(StudyDocument.id == db_question.document_id, StudyDocument.user_id == current_user.id)
+        .first()
+    )
+    if not db_document:
+        raise FileValidationException("Access denied: Question does not belong to user")
+
     # Check if the user's answer is correct
     is_correct = db_question.correct_answer == request.selected_choice
     
@@ -486,3 +496,49 @@ async def get_mcq_question_count(
     )
 
     return question_count
+
+
+@router.get("/files/{filename}")
+async def get_file(
+    filename: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Serve uploaded files with authentication.
+    Only allows users to access their own files.
+
+    Args:
+        filename: The name of the file to retrieve
+        current_user: The authenticated user
+        db: Database session
+
+    Returns:
+        FileResponse with the requested file
+    """
+    # Verify the file belongs to the current user
+    db_document = (
+        db.query(StudyDocument)
+        .filter(StudyDocument.filename == filename, StudyDocument.user_id == current_user.id)
+        .first()
+    )
+
+    if not db_document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found or access denied"
+        )
+
+    # Check if file exists on disk
+    file_path = db_document.file_path
+    if not os.path.exists(file_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found on server"
+        )
+
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type=db_document.content_type
+    )

@@ -1,7 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from app.constants.paths import UPLOAD_DIRECTORY
 from app.exceptions.exception_handlers import setup_exception_handlers
 from app.routes import study, auth
 from app.database import create_tables
@@ -9,7 +7,9 @@ from app.database import create_tables
 app = FastAPI(
     title="Study Buddy API", description="API for managing study resources and notes"
 )
-app.mount("/files", StaticFiles(directory=UPLOAD_DIRECTORY), name="uploads")
+# Removed unprotected static files mount - files are now served via protected endpoint
+# app.mount("/files", StaticFiles(directory=UPLOAD_DIRECTORY), name="uploads")
+
 # Setup exception handlers
 setup_exception_handlers(app)
 # Add CORS middleware
