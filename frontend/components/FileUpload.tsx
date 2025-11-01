@@ -155,6 +155,11 @@ const FileUpload = () => {
       const formData = new FormData();
       formData.append("file", file);
 
+      // Debug: Check if token exists
+      const token = localStorage.getItem("auth_token");
+      console.log("Auth token exists:", !!token);
+      console.log("Token preview:", token?.substring(0, 20) + "...");
+
       const response = await authenticatedFetch(API_ENDPOINTS.uploadFile, {
         method: "POST",
         body: formData,
@@ -178,7 +183,9 @@ const FileUpload = () => {
         }, 500);
       } else {
         const errorData = await response.json();
-        console.error("Upload failed:", errorData);
+        console.error("Upload failed - Status:", response.status);
+        console.error("Upload failed - Error data:", errorData);
+        console.error("Upload failed - Response headers:", Object.fromEntries(response.headers.entries()));
         setNotification({
           type: "error",
           message: `Upload failed: ${errorData.detail || "Unknown error"}`,
@@ -252,6 +259,7 @@ const FileUpload = () => {
       sessionStorage.removeItem("isAnswerSubmitted");
       sessionStorage.removeItem("isCorrect");
       sessionStorage.removeItem("validationResult");
+      sessionStorage.removeItem("questionStates");
 
       // Store the questions in sessionStorage and navigate to the questions page
       sessionStorage.setItem("generatedQuestions", JSON.stringify(result));

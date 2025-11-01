@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { API_BASE_URL, API_ENDPOINTS, authenticatedFetch } from '@/lib/api';
 
 // Define the question type based on the schema
@@ -37,6 +38,14 @@ type AnswerValidationResponse = {
   question: string;
 };
 
+// Per-question state type
+type QuestionState = {
+  selectedChoice: string | null;
+  isAnswerSubmitted: boolean;
+  isCorrect: boolean | null;
+  validationResult: AnswerValidationResponse | null;
+};
+
 const QuestionsPage = () => {
   const router = useRouter();
   const [questionsData, setQuestionsData] = useState<MCQGenerationResponse | null>(null);
@@ -48,44 +57,37 @@ const QuestionsPage = () => {
     }
     return 0;
   });
-  const [selectedChoice, setSelectedChoice] = useState<string | null>(() => {
-    // Try to get selected choice from session storage
+
+  // Store state for each question separately
+  const [questionStates, setQuestionStates] = useState<Record<number, QuestionState>>(() => {
     if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('selectedChoice');
+      const saved = sessionStorage.getItem('questionStates');
+      return saved ? JSON.parse(saved) : {};
     }
-    return null;
+    return {};
   });
-  const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(() => {
-    // Try to get answer submission status from session storage
-    if (typeof window !== 'undefined') {
-      const savedStatus = sessionStorage.getItem('isAnswerSubmitted');
-      return savedStatus === 'true';
-    }
-    return false;
-  });
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(() => {
-    // Try to get correctness status from session storage
-    if (typeof window !== 'undefined') {
-      const savedStatus = sessionStorage.getItem('isCorrect');
-      return savedStatus !== null ? savedStatus === 'true' : null;
-    }
-    return null;
-  });
-  const [validationResult, setValidationResult] = useState<AnswerValidationResponse | null>(() => {
-    // Try to get validation result from session storage
-    if (typeof window !== 'undefined') {
-      const savedResult = sessionStorage.getItem('validationResult');
-      return savedResult ? JSON.parse(savedResult) : null;
-    }
-    return null;
-  });
+
   const [totalQuestions, setTotalQuestions] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Get current question state
+  const currentState = questionStates[currentQuestionIndex] || {
+    selectedChoice: null,
+    isAnswerSubmitted: false,
+    isCorrect: null,
+    validationResult: null,
+  };
+
   useEffect(() => {
-    // Get the questions data from sessionStorage or localStorage
+    // Clean up old session storage format
+    sessionStorage.removeItem('selectedChoice');
+    sessionStorage.removeItem('isAnswerSubmitted');
+    sessionStorage.removeItem('isCorrect');
+    sessionStorage.removeItem('validationResult');
+
+    // Get the questions data from sessionStorage
     const storedData = sessionStorage.getItem('generatedQuestions');
     if (storedData) {
       try {
@@ -103,6 +105,13 @@ const QuestionsPage = () => {
       router.push('/');
     }
   }, [router]);
+
+  // Save question states to session storage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('questionStates', JSON.stringify(questionStates));
+    }
+  }, [questionStates]);
 
   // Fetch total question count from backend
   useEffect(() => {
@@ -164,59 +173,32 @@ const QuestionsPage = () => {
           setError('Failed to load question');
         } finally {
           setQuestionsLoading(false);
-          // Reset states when changing questions
-          setSelectedChoice(null);
-          setIsAnswerSubmitted(false);
-          setIsCorrect(null);
-          setValidationResult(null);
         }
       };
-      
+
       fetchQuestion();
     }
   }, [currentQuestionIndex, questionsData?.filename]); // Only re-run when currentQuestionIndex or filename changes
 
-  // Save state to session storage whenever it changes
+  // Save current question index to session storage
   useEffect(() => {
     sessionStorage.setItem('currentQuestionIndex', currentQuestionIndex.toString());
   }, [currentQuestionIndex]);
 
-  useEffect(() => {
-    if (selectedChoice !== null) {
-      sessionStorage.setItem('selectedChoice', selectedChoice);
-    } else {
-      sessionStorage.removeItem('selectedChoice');
-    }
-  }, [selectedChoice]);
-
-  useEffect(() => {
-    sessionStorage.setItem('isAnswerSubmitted', isAnswerSubmitted.toString());
-  }, [isAnswerSubmitted]);
-
-  useEffect(() => {
-    if (isCorrect !== null) {
-      sessionStorage.setItem('isCorrect', isCorrect.toString());
-    } else {
-      sessionStorage.removeItem('isCorrect');
-    }
-  }, [isCorrect]);
-
-  useEffect(() => {
-    if (validationResult) {
-      sessionStorage.setItem('validationResult', JSON.stringify(validationResult));
-    } else {
-      sessionStorage.removeItem('validationResult');
-    }
-  }, [validationResult]);
-
   const handleChoiceSelect = (choiceId: string) => {
-    if (!isAnswerSubmitted) {
-      setSelectedChoice(choiceId);
+    if (!currentState.isAnswerSubmitted) {
+      setQuestionStates(prev => ({
+        ...prev,
+        [currentQuestionIndex]: {
+          ...currentState,
+          selectedChoice: choiceId,
+        }
+      }));
     }
   };
 
   const handleSubmitAnswer = async () => {
-    if (!selectedChoice || !questionsData?.questions[currentQuestionIndex]) return;
+    if (!currentState.selectedChoice || !questionsData?.questions[currentQuestionIndex]) return;
 
     try {
       const response = await authenticatedFetch(API_ENDPOINTS.validateAnswer, {
@@ -226,15 +208,21 @@ const QuestionsPage = () => {
         },
         body: JSON.stringify({
           question_id: questionsData.questions[currentQuestionIndex].id,
-          selected_choice: selectedChoice,
+          selected_choice: currentState.selectedChoice,
         }),
       });
 
       if (response.ok) {
         const result: AnswerValidationResponse = await response.json();
-        setValidationResult(result);
-        setIsCorrect(result.is_correct);
-        setIsAnswerSubmitted(true);
+        setQuestionStates(prev => ({
+          ...prev,
+          [currentQuestionIndex]: {
+            ...currentState,
+            validationResult: result,
+            isCorrect: result.is_correct,
+            isAnswerSubmitted: true,
+          }
+        }));
       } else {
         setError(`Failed to validate answer: ${response.status} ${response.statusText}`);
       }
@@ -262,58 +250,64 @@ const QuestionsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center glass-card p-6 rounded-xl">
-            <div className="w-12 h-12 border-t-4 border-indigo-400 border-solid rounded-full animate-spin mx-auto"></div>
-            <p className="mt-3 text-base text-gray-200">Loading your questions...</p>
+      <ProtectedRoute>
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
+          <Navbar />
+          <div className="flex-grow flex items-center justify-center">
+            <div className="text-center glass-card p-6 rounded-xl">
+              <div className="w-12 h-12 border-t-4 border-indigo-400 border-solid rounded-full animate-spin mx-auto"></div>
+              <p className="mt-3 text-base text-gray-200">Loading your questions...</p>
+            </div>
           </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </ProtectedRoute>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center glass-card p-6 rounded-xl max-w-sm">
-            <h2 className="text-xl font-bold text-red-400 mb-3">Error Loading Questions</h2>
-            <p className="text-gray-300 mb-4">{error}</p>
-            <button
-              onClick={handleBackToUpload}
-              className="px-5 py-2 glass-button text-white font-medium rounded-xl hover:bg-white/20 transition-all"
-            >
-              Back to Upload
-            </button>
+      <ProtectedRoute>
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
+          <Navbar />
+          <div className="flex-grow flex items-center justify-center">
+            <div className="text-center glass-card p-6 rounded-xl max-w-sm">
+              <h2 className="text-xl font-bold text-red-400 mb-3">Error Loading Questions</h2>
+              <p className="text-gray-300 mb-4">{error}</p>
+              <button
+                onClick={handleBackToUpload}
+                className="px-5 py-2 glass-button text-white font-medium rounded-xl hover:bg-white/20 transition-all"
+              >
+                Back to Upload
+              </button>
+            </div>
           </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </ProtectedRoute>
     );
   }
 
   if (!questionsData || questionsData.questions.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center glass-card p-6 rounded-xl max-w-sm">
-            <h2 className="text-xl font-bold text-white mb-3">No Questions Found</h2>
-            <p className="text-gray-300 mb-4">Please generate questions first.</p>
-            <button
-              onClick={handleBackToUpload}
-              className="px-5 py-2 glass-button text-white font-medium rounded-xl hover:bg-white/20 transition-all"
-            >
-              Back to Upload
-            </button>
+      <ProtectedRoute>
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
+          <Navbar />
+          <div className="flex-grow flex items-center justify-center">
+            <div className="text-center glass-card p-6 rounded-xl max-w-sm">
+              <h2 className="text-xl font-bold text-white mb-3">No Questions Found</h2>
+              <p className="text-gray-300 mb-4">Please generate questions first.</p>
+              <button
+                onClick={handleBackToUpload}
+                className="px-5 py-2 glass-button text-white font-medium rounded-xl hover:bg-white/20 transition-all"
+              >
+                Back to Upload
+              </button>
+            </div>
           </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </ProtectedRoute>
     );
   }
 
@@ -321,21 +315,24 @@ const QuestionsPage = () => {
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
-        <Navbar />
-        <div className="flex-grow flex items-center justify-center">
-          <div className="text-center glass-card p-6 rounded-xl">
-            <h2 className="text-xl font-bold text-white mb-3">Loading Question...</h2>
-            <div className="w-12 h-12 border-t-4 border-indigo-400 border-solid rounded-full animate-spin mx-auto"></div>
+      <ProtectedRoute>
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
+          <Navbar />
+          <div className="flex-grow flex items-center justify-center">
+            <div className="text-center glass-card p-6 rounded-xl">
+              <h2 className="text-xl font-bold text-white mb-3">Loading Question...</h2>
+              <div className="w-12 h-12 border-t-4 border-indigo-400 border-solid rounded-full animate-spin mx-auto"></div>
+            </div>
           </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </ProtectedRoute>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
+    <ProtectedRoute>
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
       {/* Decorative background elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
         <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
@@ -382,12 +379,12 @@ const QuestionsPage = () => {
                 
                 <div className="space-y-2.5 mb-4">
                   {currentQuestion.choices.map((choice) => (
-                    <div 
+                    <div
                       key={choice.id}
                       onClick={() => handleChoiceSelect(choice.id)}
                       className={`flex items-start p-3 rounded-lg cursor-pointer transition-all ${
-                        selectedChoice === choice.id
-                          ? isAnswerSubmitted
+                        currentState.selectedChoice === choice.id
+                          ? currentState.isAnswerSubmitted
                             ? choice.id === currentQuestion.correct_answer
                               ? 'glass-choice correct'
                               : 'glass-choice incorrect'
@@ -395,10 +392,10 @@ const QuestionsPage = () => {
                           : 'glass-choice'
                       }`}
                     >
-                      <span 
+                      <span
                         className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mr-2 text-xs ${
-                          selectedChoice === choice.id
-                            ? isAnswerSubmitted
+                          currentState.selectedChoice === choice.id
+                            ? currentState.isAnswerSubmitted
                               ? choice.id === currentQuestion.correct_answer
                                 ? 'bg-green-400 text-white'
                                 : 'bg-red-400 text-white'
@@ -415,13 +412,13 @@ const QuestionsPage = () => {
                   ))}
                 </div>
 
-                {!isAnswerSubmitted ? (
-                  <div className="flex justify-center">
+                {!currentState.isAnswerSubmitted ? (
+                  <div className="flex justify-center mb-4">
                     <button
                       onClick={handleSubmitAnswer}
-                      disabled={!selectedChoice}
+                      disabled={!currentState.selectedChoice}
                       className={`px-4 py-2 font-medium rounded-lg transition-all text-sm ${
-                        selectedChoice
+                        currentState.selectedChoice
                           ? 'bg-indigo-600/80 text-white hover:bg-indigo-600/90 backdrop-blur-sm'
                           : 'bg-gray-500/40 text-gray-400 cursor-not-allowed'
                       }`}
@@ -430,54 +427,55 @@ const QuestionsPage = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-3 mb-4">
                     <div className={`p-3 rounded-lg ${
-                      isCorrect ? 'glass-choice correct' : 'glass-choice incorrect'
+                      currentState.isCorrect ? 'glass-choice correct' : 'glass-choice incorrect'
                     }`}>
                       <p className="font-medium text-white text-sm">
-                        {isCorrect ? '✓ Correct!' : '✗ Incorrect!'}
+                        {currentState.isCorrect ? '✓ Correct!' : '✗ Incorrect!'}
                       </p>
-                      {!isCorrect && (
+                      {!currentState.isCorrect && (
                         <p className="mt-1.5 text-white text-sm">
                           <span className="font-medium">Correct answer:</span> {currentQuestion.choices.find(c => c.id === currentQuestion.correct_answer)?.text}
                         </p>
                       )}
                     </div>
-                    
-                    {validationResult?.explanation && (
+
+                    {currentState.validationResult?.explanation && (
                       <div className="glass-choice p-3 rounded-lg">
                         <p className="font-medium text-indigo-300 text-sm">Explanation:</p>
-                        <p className="mt-1 text-gray-200 text-sm">{validationResult.explanation}</p>
+                        <p className="mt-1 text-gray-200 text-sm">{currentState.validationResult.explanation}</p>
                       </div>
                     )}
-                    
-                    <div className="flex justify-between mt-4">
-                      <button
-                        onClick={handlePreviousQuestion}
-                        disabled={currentQuestionIndex === 0}
-                        className={`px-3 py-1.5 rounded-lg ${
-                          currentQuestionIndex === 0
-                            ? 'glass-button bg-gray-500/30 text-gray-400 cursor-not-allowed text-sm'
-                            : 'glass-button text-white hover:bg-white/20 text-sm'
-                        }`}
-                      >
-                        Previous
-                      </button>
-                      
-                      <button
-                        onClick={handleNextQuestion}
-                        disabled={currentQuestionIndex === totalQuestions - 1}
-                        className={`px-3 py-1.5 rounded-lg ${
-                          currentQuestionIndex === totalQuestions - 1
-                            ? 'glass-button bg-gray-500/30 text-gray-400 cursor-not-allowed text-sm'
-                            : 'glass-button text-white hover:bg-white/20 text-sm'
-                        }`}
-                      >
-                        Next Question
-                      </button>
-                    </div>
                   </div>
                 )}
+
+                {/* Navigation buttons - always visible */}
+                <div className="flex justify-between mt-4">
+                  <button
+                    onClick={handlePreviousQuestion}
+                    disabled={currentQuestionIndex === 0}
+                    className={`px-3 py-1.5 rounded-lg ${
+                      currentQuestionIndex === 0
+                        ? 'glass-button bg-gray-500/30 text-gray-400 cursor-not-allowed text-sm'
+                        : 'glass-button text-white hover:bg-white/20 text-sm'
+                    }`}
+                  >
+                    Previous
+                  </button>
+
+                  <button
+                    onClick={handleNextQuestion}
+                    disabled={currentQuestionIndex === totalQuestions - 1}
+                    className={`px-3 py-1.5 rounded-lg ${
+                      currentQuestionIndex === totalQuestions - 1
+                        ? 'glass-button bg-gray-500/30 text-gray-400 cursor-not-allowed text-sm'
+                        : 'glass-button text-white hover:bg-white/20 text-sm'
+                    }`}
+                  >
+                    Next Question
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -520,7 +518,8 @@ const QuestionsPage = () => {
           animation-delay: 4s;
         }
       `}</style>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 };
 
