@@ -292,9 +292,10 @@ const FileUpload = () => {
       {/* Notification Toast */}
       {notification && (
         <div
-          className={`fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg text-white max-w-sm ${
+          className={`fixed top-20 right-4 p-4 rounded-md shadow-lg text-white max-w-sm ${
             notification.type === "success" ? "bg-green-500" : "bg-red-500"
           }`}
+          style={{ zIndex: 9999 }}
         >
           <div className="flex justify-between items-start">
             <span>{notification.message}</span>
