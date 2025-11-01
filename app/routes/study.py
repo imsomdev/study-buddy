@@ -11,7 +11,7 @@ from app.constants.file_types import ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
 from app.constants.paths import UPLOAD_DIRECTORY
 from app.database.config import get_db
 from app.database.models import MCQQuestion as DBMCQQuestion
-from app.database.models import StudyDocument
+from app.database.models import StudyDocument, User
 from app.exceptions.custom_exceptions import (
     FileUploadException,
     FileValidationException,
@@ -29,6 +29,7 @@ from app.services.extraction_service import extract_text_from_file
 from app.services.llm_service import (
     generate_mcq_questions_from_pages,
 )
+from app.services.auth_service import get_current_active_user
 
 router = APIRouter()
 
@@ -41,6 +42,7 @@ router = APIRouter()
 async def create_upload_file(
     file: UploadFile = File(...),
     request: Request = Request,
+    current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
     # 1. Validate the file extension
@@ -75,6 +77,7 @@ async def create_upload_file(
 
         # Create a new study document record in the database
         db_document = StudyDocument(
+            user_id=current_user.id,
             filename=safe_filename,
             content_type=file.content_type,
             file_path=file_location,
@@ -99,7 +102,11 @@ async def create_upload_file(
 
 
 @router.post("/generate-mcq/", response_model=MCQGenerationResponse)
-async def generate_mcq_questions(request: MCQRequest, db: Session = Depends(get_db)):
+async def generate_mcq_questions(
+    request: MCQRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """
     Generate MCQ questions from an existing file URL.
     Returns questions from the first page immediately, then continues processing remaining pages in the background.
@@ -132,12 +139,14 @@ async def generate_mcq_questions(request: MCQRequest, db: Session = Depends(get_
         # Extract text from the existing file
         pages_text = extract_text_from_file(file_location)
 
-        # Get the document from the database based on the filename
+        # Get the document from the database based on the filename and user_id
         db_document = (
-            db.query(StudyDocument).filter(StudyDocument.filename == filename).first()
+            db.query(StudyDocument)
+            .filter(StudyDocument.filename == filename, StudyDocument.user_id == current_user.id)
+            .first()
         )
         if not db_document:
-            raise FileValidationException(f"Document not found in database: {filename}")
+            raise FileValidationException(f"Document not found or access denied: {filename}")
 
         # Process first page and return results immediately
         first_page_questions = []
@@ -187,7 +196,7 @@ async def generate_mcq_questions(request: MCQRequest, db: Session = Depends(get_
                     # Re-query the document in the background session to get a fresh instance
                     background_document = (
                         background_db.query(StudyDocument)
-                        .filter(StudyDocument.filename == filename)
+                        .filter(StudyDocument.filename == filename, StudyDocument.user_id == current_user.id)
                         .first()
                     )
 
@@ -251,7 +260,11 @@ async def generate_mcq_questions(request: MCQRequest, db: Session = Depends(get_
 
 
 @router.get("/mcq-questions/{document_filename}", response_model=List[MCQQuestion])
-async def get_mcq_questions(document_filename: str, db: Session = Depends(get_db)):
+async def get_mcq_questions(
+    document_filename: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """
     Retrieve all MCQ questions for a specific document.
 
@@ -262,15 +275,15 @@ async def get_mcq_questions(document_filename: str, db: Session = Depends(get_db
     Returns:
         List of MCQQuestion objects
     """
-    # Get the document from the database based on the filename
+    # Get the document from the database based on the filename and user_id
     db_document = (
         db.query(StudyDocument)
-        .filter(StudyDocument.filename == document_filename)
+        .filter(StudyDocument.filename == document_filename, StudyDocument.user_id == current_user.id)
         .first()
     )
     if not db_document:
         raise FileValidationException(
-            f"Document not found in database: {document_filename}"
+            f"Document not found or access denied: {document_filename}"
         )
 
     # Retrieve all MCQ questions for this document
@@ -314,7 +327,11 @@ async def get_mcq_questions(document_filename: str, db: Session = Depends(get_db
 
 
 @router.post("/validate-answer/", response_model=AnswerValidationResponse)
-async def validate_answer(request: AnswerValidationRequest, db: Session = Depends(get_db)):
+async def validate_answer(
+    request: AnswerValidationRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """
     Validate a user's answer for a specific question.
 
@@ -363,7 +380,12 @@ async def validate_answer(request: AnswerValidationRequest, db: Session = Depend
 
 
 @router.get("/mcq-questions/{document_filename}/{question_index}", response_model=MCQQuestion)
-async def get_specific_mcq_question(document_filename: str, question_index: int, db: Session = Depends(get_db)):
+async def get_specific_mcq_question(
+    document_filename: str,
+    question_index: int,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """
     Retrieve a specific MCQ question for a document by index.
 
@@ -375,15 +397,15 @@ async def get_specific_mcq_question(document_filename: str, question_index: int,
     Returns:
         A single MCQQuestion object at the specified index
     """
-    # Get the document from the database based on the filename
+    # Get the document from the database based on the filename and user_id
     db_document = (
         db.query(StudyDocument)
-        .filter(StudyDocument.filename == document_filename)
+        .filter(StudyDocument.filename == document_filename, StudyDocument.user_id == current_user.id)
         .first()
     )
     if not db_document:
         raise FileValidationException(
-            f"Document not found in database: {document_filename}"
+            f"Document not found or access denied: {document_filename}"
         )
 
     # Retrieve MCQ questions for this document ordered by id
@@ -430,7 +452,11 @@ async def get_specific_mcq_question(document_filename: str, question_index: int,
 
 
 @router.get("/mcq-question-count/{document_filename}", response_model=int)
-async def get_mcq_question_count(document_filename: str, db: Session = Depends(get_db)):
+async def get_mcq_question_count(
+    document_filename: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
     """
     Retrieve the total count of MCQ questions for a specific document.
 
@@ -441,15 +467,15 @@ async def get_mcq_question_count(document_filename: str, db: Session = Depends(g
     Returns:
         The total number of questions for the specified document
     """
-    # Get the document from the database based on the filename
+    # Get the document from the database based on the filename and user_id
     db_document = (
         db.query(StudyDocument)
-        .filter(StudyDocument.filename == document_filename)
+        .filter(StudyDocument.filename == document_filename, StudyDocument.user_id == current_user.id)
         .first()
     )
     if not db_document:
         raise FileValidationException(
-            f"Document not found in database: {document_filename}"
+            f"Document not found or access denied: {document_filename}"
         )
 
     # Count MCQ questions for this document
