@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
@@ -12,58 +13,66 @@ from dotenv import load_dotenv
 import secrets
 from pathlib import Path
 
-# Load .env from project root
 env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-# JWT Configuration
+logger = logging.getLogger(__name__)
+
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
+    logger.critical("SECRET_KEY not found in environment variables")
     raise ValueError("SECRET_KEY must be set in .env file - JWT tokens cannot work without it")
-print(f"[SECRET_KEY DEBUG] Loaded SECRET_KEY: {SECRET_KEY[:20]}...")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_DAYS = 14  # Token valid for 14 days
+ACCESS_TOKEN_EXPIRE_DAYS = 14
 
-# Security scheme
 security = HTTPBearer()
 
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
-    # Encode password to bytes
-    password_bytes = password.encode("utf-8")
-    # Generate salt and hash password
-    salt = bcrypt.gensalt()
-    hashed = bcrypt.hashpw(password_bytes, salt)
-    # Return as string
-    return hashed.decode("utf-8")
+    try:
+        password_bytes = password.encode("utf-8")
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password_bytes, salt)
+        return hashed.decode("utf-8")
+    except Exception as e:
+        logger.error(f"Password hashing failed: {type(e).__name__}")
+        raise
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash using bcrypt"""
-    # Encode inputs to bytes
-    password_bytes = plain_password.encode("utf-8")
-    hashed_bytes = hashed_password.encode("utf-8")
-    # Verify password
-    return bcrypt.checkpw(password_bytes, hashed_bytes)
+    try:
+        password_bytes = plain_password.encode("utf-8")
+        hashed_bytes = hashed_password.encode("utf-8")
+        result = bcrypt.checkpw(password_bytes, hashed_bytes)
+        return result
+    except Exception as e:
+        logger.error(f"Password verification failed: {type(e).__name__}")
+        return False
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a JWT access token"""
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+    try:
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.now(timezone.utc) + expires_delta
+        else:
+            expire = datetime.now(timezone.utc) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
 
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+        to_encode.update({"exp": expire})
+        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+        return encoded_jwt
+    except Exception as e:
+        logger.error(f"JWT token creation failed: {type(e).__name__}")
+        raise
 
 
 def create_reset_token() -> str:
     """Create a secure random token for password reset"""
-    return secrets.token_urlsafe(32)
+    token = secrets.token_urlsafe(32)
+    return token
 
 
 def verify_token(token: str) -> Optional[dict]:
@@ -71,8 +80,7 @@ def verify_token(token: str) -> Optional[dict]:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError as e:
-        print(f"[AUTH DEBUG] JWT decode error: {type(e).__name__}: {str(e)}")
+    except JWTError:
         return None
 
 
@@ -90,49 +98,40 @@ async def get_current_user(
     )
 
     try:
-        print(f"[AUTH DEBUG] Received credentials: {credentials}")
-        print(f"[AUTH DEBUG] Token: {credentials.credentials[:20]}...")
-
         token = credentials.credentials
+
         payload = verify_token(token)
-        print(f"[AUTH DEBUG] Decoded payload: {payload}")
 
         if payload is None:
-            print("[AUTH DEBUG] Payload is None - token verification failed")
             raise credentials_exception
 
         user_id_str: str = payload.get("sub")
-        print(f"[AUTH DEBUG] User ID from token: {user_id_str}")
 
         if user_id_str is None:
-            print("[AUTH DEBUG] No user_id in payload")
             raise credentials_exception
 
         try:
             user_id = int(user_id_str)
         except (ValueError, TypeError):
-            print(f"[AUTH DEBUG] Invalid user_id format: {user_id_str}")
             raise credentials_exception
 
         user = db.query(User).filter(User.id == user_id).first()
-        print(f"[AUTH DEBUG] User found: {user is not None}")
 
         if user is None:
-            print("[AUTH DEBUG] User not found in database")
+            logger.warning(f"Authentication failed: User not found - user_id: {user_id}")
             raise credentials_exception
 
         if not user.is_active:
-            print("[AUTH DEBUG] User is not active")
+            logger.warning(f"Authentication failed: Inactive user - user_id: {user_id}, email: {user.email}")
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user account"
             )
 
-        print(f"[AUTH DEBUG] Authentication successful for user: {user.email}")
         return user
     except HTTPException:
         raise
     except Exception as e:
-        print(f"[AUTH DEBUG] Unexpected error: {type(e).__name__}: {str(e)}")
+        logger.error(f"Authentication error: {type(e).__name__} - {str(e)}")
         raise credentials_exception
 
 
