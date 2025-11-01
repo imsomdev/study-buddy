@@ -18,4 +18,41 @@ export const API_ENDPOINTS = {
       filename
     )}/${questionIndex}`,
   validateAnswer: `${API_BASE_URL}/api/v1/validate-answer/`,
+  auth: {
+    login: `${API_BASE_URL}/api/v1/auth/login`,
+    signup: `${API_BASE_URL}/api/v1/auth/signup`,
+    me: `${API_BASE_URL}/api/v1/auth/me`,
+    passwordResetRequest: `${API_BASE_URL}/api/v1/auth/password-reset/request`,
+    passwordResetConfirm: `${API_BASE_URL}/api/v1/auth/password-reset/confirm`,
+    changePassword: `${API_BASE_URL}/api/v1/auth/password/change`,
+  },
 };
+
+// Helper function to get auth headers
+export function getAuthHeaders(): HeadersInit {
+  if (typeof window === "undefined") return {};
+  const token = localStorage.getItem("auth_token");
+  return {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+}
+
+// Helper function for authenticated fetch
+export async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  if (typeof window === "undefined") {
+    return fetch(url, options);
+  }
+
+  const token = localStorage.getItem("auth_token");
+
+  const headers: HeadersInit = {
+    ...options.headers,
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+}
