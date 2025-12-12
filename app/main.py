@@ -46,3 +46,8 @@ app.include_router(study.router, prefix="/api/v1", tags=["studies"])
 @app.get("/")
 async def root():
     return {"message": "Welcome to Study Buddy API"}
+
+
+@app.get("/hi")
+async def hi():
+    return {"message": "hi"}
