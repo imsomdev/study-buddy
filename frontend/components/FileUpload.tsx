@@ -3,10 +3,10 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL, API_ENDPOINTS } from "../lib/api";
+import { Upload, FileText, Eye, Sparkles, X, Check, Loader2, Image } from "lucide-react";
 
 type FileType = "pdf" | "docx" | "txt" | null;
 
-// Define the question type based on the schema
 type Choice = {
   id: string;
   text: string;
@@ -140,12 +140,11 @@ const FileUpload = () => {
     setIsUploading(true);
     setUploadProgress(0);
 
-    // Simulate upload progress for better UX
     const progressInterval = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev >= 95) {
           clearInterval(progressInterval);
-          return 95; // Keep at 95% until actual upload completes
+          return 95;
         }
         return prev + 5;
       });
@@ -171,7 +170,6 @@ const FileUpload = () => {
           message: `${file.name} uploaded successfully!`,
         });
 
-        // Set upload complete to show the post-upload screen
         setTimeout(() => {
           setIsUploading(false);
           setIsUploadComplete(true);
@@ -198,7 +196,6 @@ const FileUpload = () => {
 
   const handleViewFile = () => {
     if (file) {
-      // Create a temporary URL for the file and open it
       const fileURL = URL.createObjectURL(file);
       window.open(fileURL, "_blank");
     }
@@ -210,7 +207,6 @@ const FileUpload = () => {
     setIsGeneratingQuestions(true);
 
     try {
-      // Upload the file to get its URL for question generation
       const formData = new FormData();
       formData.append("file", file);
 
@@ -226,7 +222,6 @@ const FileUpload = () => {
 
       const uploadResult = await uploadResponse.json();
 
-      // Now generate questions using the file URL
       const generateResponse = await fetch(API_ENDPOINTS.generateMcq, {
         method: "POST",
         headers: {
@@ -234,7 +229,7 @@ const FileUpload = () => {
         },
         body: JSON.stringify({
           file_url: uploadResult.file_url,
-          num_questions: 5, // Default number of questions per page
+          num_questions: 5,
         }),
       });
 
@@ -246,21 +241,18 @@ const FileUpload = () => {
       const result: MCQGenerationResponse = await generateResponse.json();
       console.log("Questions generated:", result);
 
-      // Clear any existing session storage from previous attempts
       sessionStorage.removeItem("currentQuestionIndex");
       sessionStorage.removeItem("selectedChoice");
       sessionStorage.removeItem("isAnswerSubmitted");
       sessionStorage.removeItem("isCorrect");
       sessionStorage.removeItem("validationResult");
 
-      // Store the questions in sessionStorage and navigate to the questions page
       sessionStorage.setItem("generatedQuestions", JSON.stringify(result));
       setNotification({
         type: "success",
         message: `Questions generated successfully from ${result.page_count} pages!`,
       });
 
-      // Navigate to the questions page
       router.push("/questions");
     } catch (error) {
       console.error("Question generation error:", error);
@@ -272,12 +264,10 @@ const FileUpload = () => {
     }
   };
 
-  // Function to close the notification
   const closeNotification = () => {
     setNotification(null);
   };
 
-  // Auto-close notification after 5 seconds
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => {
@@ -288,82 +278,72 @@ const FileUpload = () => {
   }, [notification]);
 
   return (
-    <div className="w-full max-w-lg mx-auto">
+    <div className="w-full max-w-2xl mx-auto">
       {/* Notification Toast */}
       {notification && (
         <div
-          className={`fixed top-4 right-4 z-50 p-4 rounded-md shadow-lg text-white max-w-sm ${
-            notification.type === "success" ? "bg-green-500" : "bg-red-500"
+          className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 px-4 py-3 sm:px-5 sm:py-4 rounded-xl sm:rounded-2xl shadow-2xl text-white max-w-[calc(100vw-2rem)] sm:max-w-sm text-sm sm:text-base ${
+            notification.type === "success" ? "toast-success" : "toast-error"
           }`}
         >
-          <div className="flex justify-between items-start">
-            <span>{notification.message}</span>
+          <div className="flex justify-between items-start gap-3">
+            <div className="flex items-center gap-2">
+              {notification.type === "success" ? (
+                <Check className="w-5 h-5" />
+              ) : (
+                <X className="w-5 h-5" />
+              )}
+              <span className="font-medium">{notification.message}</span>
+            </div>
             <button
               onClick={closeNotification}
-              className="ml-4 text-white focus:outline-none"
+              className="text-white/80 hover:text-white transition-colors"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
 
-      <div className="glass-card p-4">
+      {/* Main Upload Area */}
+      <div className="glass-panel p-4 sm:p-6 animate-glow">
         {!file && !isUploadComplete ? (
+          /* Drop Zone */
           <div
-            className={`glass-choice border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${
-              isDragActive
-                ? "border-indigo-300 bg-indigo-500/20"
-                : "border-white/30 hover:border-indigo-300"
+            className={`glass-upload p-6 sm:p-8 md:p-10 text-center cursor-pointer ${
+              isDragActive ? "active" : ""
             }`}
             onDrop={handleDrop}
             onDragOver={handleDrag}
+            onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onClick={handleUploadClick}
           >
             <div className="flex flex-col items-center justify-center">
-              <div className="mb-3">
-                <svg
-                  className="mx-auto h-10 w-10 text-gray-400"
-                  stroke="currentColor"
-                  fill="none"
-                  viewBox="0 0 48 48"
-                >
-                  <path
-                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+              {/* Upload Icon with Image Preview */}
+              <div className="relative mb-4 sm:mb-6">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center animate-bounce-subtle">
+                  <Image className="w-8 h-8 sm:w-10 sm:h-10 text-white/70" />
+                </div>
+                <div className="absolute -top-1.5 -right-1.5 sm:-top-2 sm:-right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center">
+                  <Upload className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
+                </div>
               </div>
-              <p className="text-base font-medium text-white mb-1.5">
-                Drag & drop your files here
+
+              <p className="text-xl sm:text-2xl font-semibold text-white mb-2">
+                Drag your files here
               </p>
-              <p className="text-gray-300 mb-3">or click to browse</p>
+              <p className="text-white/70 mb-4 sm:mb-6 text-sm sm:text-base">or click to browse</p>
+              
               <button
                 type="button"
-                className="px-4 py-2 glass-button text-white font-medium rounded-lg text-sm transition-all"
+                className="btn-primary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base"
               >
                 Browse Files
               </button>
-              <p className="mt-3 text-xs text-gray-300">
+              
+              <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-white/60">
                 Supports PDF, DOCX, and TXT files
-              </p>
-              <p className="mt-1.5 text-xs text-gray-400 italic">
-                Upload here to generate questions and study materials
               </p>
             </div>
             <input
@@ -375,276 +355,166 @@ const FileUpload = () => {
             />
           </div>
         ) : isUploading ? (
-          // Upload animation component
-          <div className="glass-question rounded-lg p-4">
-            <div className="flex flex-col items-center justify-center py-6">
-              <div className="relative w-20 h-20 mb-5">
+          /* Upload Progress */
+          <div className="glass-upload p-6 sm:p-8 md:p-10">
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6">
+                <div className="absolute inset-0 rounded-full border-4 border-white/10" />
+                <div 
+                  className="absolute inset-0 rounded-full border-4 border-white border-t-transparent animate-spin"
+                  style={{ animationDuration: '1s' }}
+                />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-indigo-500/30 animate-ping"></div>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg
-                    className="w-10 h-10 text-indigo-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                    ></path>
-                  </svg>
+                  <Upload className="w-8 h-8 text-white" />
                 </div>
               </div>
 
-              <p className="text-lg font-medium text-gray-200 mb-2">
-                Uploading {file.name}
+              <p className="text-lg sm:text-xl font-semibold text-white mb-2 text-center">
+                Uploading {file?.name}
               </p>
-              <p className="text-gray-300 mb-5 text-sm">
+              <p className="text-white/70 mb-4 sm:mb-6 text-sm sm:text-base text-center">
                 Please wait while we process your file...
               </p>
 
-              <div className="w-full max-w-xs bg-white/20 rounded-full h-2 mb-2">
+              <div className="w-full max-w-xs bg-white/10 rounded-full h-3 mb-2 overflow-hidden">
                 <div
-                  className="bg-indigo-400 h-2 rounded-full transition-all duration-300 ease-out"
+                  className="h-full bg-gradient-to-r from-white/50 to-white rounded-full transition-all duration-300 ease-out progress-shimmer"
                   style={{ width: `${uploadProgress}%` }}
-                ></div>
+                />
               </div>
-              <p className="text-xs text-gray-300">{uploadProgress}%</p>
+              <p className="text-sm text-white/70">{uploadProgress}%</p>
             </div>
           </div>
         ) : isGeneratingQuestions ? (
-          // Question generation animation
-          <div className="glass-question rounded-lg p-4">
-            <div className="flex flex-col items-center justify-center py-6">
-              <div className="relative w-20 h-20 mb-5">
+          /* Generating Questions */
+          <div className="glass-upload p-6 sm:p-8 md:p-10">
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6">
+                <div className="absolute inset-0 rounded-full bg-white/10 animate-ping" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-16 h-16 rounded-full bg-indigo-500/30 animate-ping"></div>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg
-                    className="w-10 h-10 text-indigo-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                    ></path>
-                  </svg>
+                  <Sparkles className="w-10 h-10 text-white animate-spin-slow" />
                 </div>
               </div>
 
-              <p className="text-lg font-medium text-gray-200 mb-2">
+              <p className="text-lg sm:text-xl font-semibold text-white mb-2 text-center">
                 Generating Questions
               </p>
-              <p className="text-gray-300 mb-5 text-sm">
-                Please wait while we create study materials for you...
+              <p className="text-white/70 mb-4 sm:mb-6 text-sm sm:text-base text-center">
+                Creating study materials for you...
               </p>
 
-              <div className="w-14 h-14 border-t-4 border-indigo-400 border-solid rounded-full animate-spin"></div>
+              <div className="flex gap-1">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="w-3 h-3 rounded-full bg-white/50"
+                    style={{
+                      animation: 'bounce 1s infinite',
+                      animationDelay: `${i * 0.15}s`
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         ) : isUploadComplete ? (
-          // Post upload screen
-          <div className="glass-question rounded-lg p-4">
-            <div className="text-center mb-5">
-              <div className="w-14 h-14 bg-green-500/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                <svg
-                  className="w-6 h-6 text-green-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M5 13l4 4L19 7"
-                  ></path>
-                </svg>
+          /* Upload Complete */
+          <div className="glass-upload p-6 sm:p-8 md:p-10">
+            <div className="text-center mb-6 sm:mb-8">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-lg shadow-emerald-500/30">
+                <Check className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
               </div>
-              <h2 className="text-xl font-bold text-gray-200 mb-2">
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
                 Upload Successful!
               </h2>
-              <p className="text-gray-300 text-sm">
+              <p className="text-white/70">
                 Your file has been processed successfully
               </p>
             </div>
 
-            <div className="text-center mb-6">
-              <p className="text-base text-gray-200 mb-3">
-                What would you like to do next with{" "}
-                <span className="font-semibold text-white">{file?.name}</span>?
+            <div className="text-center mb-6 sm:mb-8">
+              <p className="text-white/80 text-sm sm:text-base">
+                What would you like to do with{" "}
+                <span className="font-semibold text-white break-all">{file?.name}</span>?
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <button
                 type="button"
                 onClick={handleViewFile}
-                className="py-2 px-3 glass-button text-white font-medium rounded-lg text-sm transition-all flex flex-col items-center"
+                className="glass-btn py-3 sm:py-4 px-4 sm:px-6 flex flex-col items-center gap-1.5 sm:gap-2"
               >
-                <svg
-                  className="w-5 h-5 mb-1.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  ></path>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                  ></path>
-                </svg>
-                <span>View File</span>
+                <Eye className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="text-sm sm:text-base">View File</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleStartJourney}
-                className="py-2 px-3 bg-indigo-600/80 text-white font-medium rounded-lg text-sm hover:bg-indigo-600/90 transition-all flex flex-col items-center backdrop-blur-sm"
+                className="btn-primary py-3 sm:py-4 px-4 sm:px-6 flex flex-col items-center gap-1.5 sm:gap-2"
               >
-                <svg
-                  className="w-5 h-5 mb-1.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
-                  ></path>
-                </svg>
-                <span>Start Learning</span>
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
+                <span className="text-sm sm:text-base">Start Learning</span>
               </button>
             </div>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 sm:mt-8 text-center">
               <button
                 type="button"
                 onClick={resetUpload}
-                className="text-indigo-300 hover:text-indigo-100 font-medium text-sm"
+                className="text-white/60 hover:text-white font-medium text-sm transition-colors"
               >
                 Upload Another File
               </button>
             </div>
           </div>
         ) : (
-          // File selected but not uploaded yet
-          <div className="glass-question rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
+          /* File Selected */
+          <div className="glass-upload p-4 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                 <div
-                  className={`mr-3 p-2 rounded-lg ${
+                  className={`p-2.5 sm:p-3 rounded-xl shrink-0 ${
                     fileType === "pdf"
-                      ? "bg-red-500/30 text-red-300"
+                      ? "bg-rose-500/20 text-rose-300"
                       : fileType === "docx"
-                      ? "bg-blue-500/30 text-blue-300"
-                      : fileType === "txt"
-                      ? "bg-green-500/30 text-green-300"
-                      : "bg-gray-500/30 text-gray-300"
+                      ? "bg-blue-500/20 text-blue-300"
+                      : "bg-emerald-500/20 text-emerald-300"
                   }`}
                 >
-                  {fileType === "pdf" ? (
-                    <svg
-                      className="w-6 h-6"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  ) : fileType === "docx" ? (
-                    <svg
-                      className="w-6 h-6"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  ) : fileType === "txt" ? (
-                    <svg
-                      className="w-6 h-6"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  ) : (
-                    <svg
-                      className="w-6 h-6"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
+                  <FileText className="w-6 h-6 sm:w-8 sm:h-8" />
                 </div>
-                <div>
-                  <p className="font-medium text-white">{file.name}</p>
-                  <p className="text-sm text-gray-300">
-                    {(file.size / 1024).toFixed(2)} KB
+                <div className="min-w-0">
+                  <p className="font-semibold text-white text-base sm:text-lg truncate">{file?.name}</p>
+                  <p className="text-xs sm:text-sm text-white/60">
+                    {file && (file.size / 1024).toFixed(2)} KB
                   </p>
                 </div>
               </div>
               <button
                 onClick={resetUpload}
-                className="text-gray-300 hover:text-white"
+                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all"
                 title="Remove file"
               >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
               <button
                 type="button"
                 onClick={handleActualUpload}
                 disabled={isUploading}
-                className="w-full py-2.5 px-4 bg-indigo-600/80 text-white font-medium rounded-lg hover:bg-indigo-600/90 transition-all backdrop-blur-sm disabled:opacity-50 text-sm"
+                className="w-full btn-primary py-3 sm:py-4 text-base sm:text-lg disabled:opacity-50"
               >
-                {isUploading ? "Uploading..." : "Upload File"}
+                {isUploading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Uploading...
+                  </span>
+                ) : (
+                  "Upload File"
+                )}
               </button>
             </div>
           </div>

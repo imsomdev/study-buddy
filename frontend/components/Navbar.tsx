@@ -2,64 +2,73 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { ModeToggle } from '@/components/mode-toggle';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="glass fixed top-0 left-0 right-0 z-50 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link href="/" className="flex-shrink-0 flex items-center">
-              <span className="text-2xl font-bold text-white">Study Buddy</span>
-            </Link>
-          </div>
-          
-          <div className="hidden md:flex items-center space-x-3">
-            <button className="px-4 py-2 glass-button text-white text-sm font-medium rounded-lg hover:bg-white/20 transition-all">
-              Login
-            </button>
-            <button className="px-4 py-2 bg-indigo-600/80 text-white text-sm font-medium rounded-lg hover:bg-indigo-600/90 transition-all backdrop-blur-sm">
-              Sign Up
-            </button>
-          </div>
-          
-          <div className="flex items-center md:hidden">
+    <nav className="fixed top-0 left-0 right-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+        <div className="flex justify-between items-center h-16 sm:h-20">
+          {/* Logo */}
+          <Link href="/" className="flex-shrink-0">
+            <span className="text-xl sm:text-2xl font-extrabold text-white tracking-tight drop-shadow-sm">
+              Study Buddy
+            </span>
+          </Link>
+
+          {/* Right side - minimal icons */}
+          <div className="flex items-center gap-2">
+            <ModeToggle />
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-200 hover:text-white focus:outline-none hover:bg-white/10 transition-all"
+              className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300"
+              aria-label="Toggle menu"
             >
-              <svg
-                className="h-6 w-6"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                {isMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                )}
-              </svg>
+              {/* Animated hamburger lines */}
+              <span className="flex flex-col items-center justify-center w-5 h-5">
+                <span
+                  className={`block h-0.5 w-5 bg-white rounded-full transition-all duration-300 ease-out ${
+                    isMenuOpen ? 'rotate-45 translate-y-1' : ''
+                  }`}
+                />
+                <span
+                  className={`block h-0.5 w-5 bg-white rounded-full mt-1.5 transition-all duration-300 ease-out ${
+                    isMenuOpen ? '-rotate-45 -translate-y-0.5' : ''
+                  }`}
+                />
+              </span>
             </button>
           </div>
         </div>
       </div>
 
-      {isMenuOpen && (
-        <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1.5 sm:px-3">
-            <button className="block px-3 py-2 glass-button text-white text-base font-medium rounded-lg w-full text-left hover:bg-white/20 transition-all">
+      {/* Dropdown Menu - w-fit on mobile/tablet, positioned to the right */}
+      <div
+        className={`absolute top-full right-0 overflow-hidden transition-all duration-500 ease-out ${
+          isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="mr-4 sm:mr-6 lg:mr-12 mt-2 p-4 sm:p-5 rounded-2xl bg-white/10 backdrop-blur-lg border border-white/10 shadow-sm  w-fit min-w-[160px] sm:min-w-[200px]">
+          <div className="flex flex-col space-y-2">
+            <Link
+              href="/login"
+              className="px-4 sm:px-5 py-2.5 sm:py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 text-sm sm:text-base font-medium whitespace-nowrap"
+              onClick={() => setIsMenuOpen(false)}
+            >
               Login
-            </button>
-            <button className="block px-3 py-2 bg-indigo-600/80 text-white rounded-lg text-base font-medium w-full backdrop-blur-sm">
+            </Link>
+            <Link
+              href="/signup"
+              className="px-4 sm:px-5 py-2.5 sm:py-3 text-white bg-white/15 hover:bg-white/25 rounded-xl transition-all duration-300 text-sm sm:text-base font-medium text-center border border-white/20 whitespace-nowrap"
+              onClick={() => setIsMenuOpen(false)}
+            >
               Sign Up
-            </button>
+            </Link>
           </div>
         </div>
-      )}
+      </div>
     </nav>
   );
 };
