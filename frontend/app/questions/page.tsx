@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { API_BASE_URL, API_ENDPOINTS } from '@/lib/api';
+import { API_ENDPOINTS } from '@/lib/api';
 
 // Define the question type based on the schema
 type Choice = {
@@ -23,6 +23,7 @@ type Question = {
 
 type MCQGenerationResponse = {
   filename: string;
+  documentId?: number;
   page_count: number;
   questions: Question[];
   message: string;
@@ -41,7 +42,6 @@ const QuestionsPage = () => {
   const router = useRouter();
   const [questionsData, setQuestionsData] = useState<MCQGenerationResponse | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(() => {
-    // Try to get current question index from session storage
     if (typeof window !== 'undefined') {
       const savedIndex = sessionStorage.getItem('currentQuestionIndex');
       return savedIndex ? parseInt(savedIndex, 10) : 0;
@@ -49,14 +49,12 @@ const QuestionsPage = () => {
     return 0;
   });
   const [selectedChoice, setSelectedChoice] = useState<string | null>(() => {
-    // Try to get selected choice from session storage
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('selectedChoice');
     }
     return null;
   });
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(() => {
-    // Try to get answer submission status from session storage
     if (typeof window !== 'undefined') {
       const savedStatus = sessionStorage.getItem('isAnswerSubmitted');
       return savedStatus === 'true';
@@ -64,7 +62,6 @@ const QuestionsPage = () => {
     return false;
   });
   const [isCorrect, setIsCorrect] = useState<boolean | null>(() => {
-    // Try to get correctness status from session storage
     if (typeof window !== 'undefined') {
       const savedStatus = sessionStorage.getItem('isCorrect');
       return savedStatus !== null ? savedStatus === 'true' : null;
@@ -72,7 +69,6 @@ const QuestionsPage = () => {
     return null;
   });
   const [validationResult, setValidationResult] = useState<AnswerValidationResponse | null>(() => {
-    // Try to get validation result from session storage
     if (typeof window !== 'undefined') {
       const savedResult = sessionStorage.getItem('validationResult');
       return savedResult ? JSON.parse(savedResult) : null;
@@ -85,14 +81,12 @@ const QuestionsPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if authenticated
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
       return;
     }
 
-    // Get the questions data from sessionStorage or localStorage
     const storedData = sessionStorage.getItem('generatedQuestions');
     if (storedData) {
       try {
@@ -106,7 +100,6 @@ const QuestionsPage = () => {
         setLoading(false);
       }
     } else {
-      // Redirect back to home if no data found
       router.push('/');
     }
   }, [router]);
@@ -129,7 +122,6 @@ const QuestionsPage = () => {
           }
         } catch (err) {
           console.error('Error fetching question count:', err);
-          // Fallback to using the length from session storage if API fails
           if (questionsData.questions && questionsData.questions.length > 0) {
             setTotalQuestions(questionsData.questions.length);
           }
@@ -152,14 +144,12 @@ const QuestionsPage = () => {
           });
           if (response.ok) {
             const question = await response.json();
-            // Update the questions array with the fetched question at the current index
             setQuestionsData(prevData => {
               if (!prevData) return null;
               const updatedQuestions = [...prevData.questions];
               if (updatedQuestions.length > currentQuestionIndex) {
                 updatedQuestions[currentQuestionIndex] = question;
               } else {
-                // If the array is shorter, fill in with previous questions and add the new one
                 while (updatedQuestions.length < currentQuestionIndex) {
                   updatedQuestions.push(prevData.questions[updatedQuestions.length]);
                 }
@@ -179,7 +169,6 @@ const QuestionsPage = () => {
           setError('Failed to load question');
         } finally {
           setQuestionsLoading(false);
-          // Reset states when changing questions
           setSelectedChoice(null);
           setIsAnswerSubmitted(false);
           setIsCorrect(null);
@@ -189,7 +178,7 @@ const QuestionsPage = () => {
       
       fetchQuestion();
     }
-  }, [currentQuestionIndex, questionsData?.filename]); // Only re-run when currentQuestionIndex or filename changes
+  }, [currentQuestionIndex, questionsData?.filename]);
 
   // Save state to session storage whenever it changes
   useEffect(() => {
@@ -252,6 +241,27 @@ const QuestionsPage = () => {
         setValidationResult(result);
         setIsCorrect(result.is_correct);
         setIsAnswerSubmitted(true);
+
+        // Record progress to backend
+        if (questionsData.documentId && token) {
+          try {
+            await fetch(API_ENDPOINTS.progressRecord, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                document_id: questionsData.documentId,
+                question_id: questionsData.questions[currentQuestionIndex].id,
+                selected_choice: selectedChoice,
+                is_correct: result.is_correct
+              })
+            });
+          } catch (progressError) {
+            console.error('Error recording progress:', progressError);
+          }
+        }
       } else {
         setError(`Failed to validate answer: ${response.status} ${response.statusText}`);
       }
@@ -279,12 +289,15 @@ const QuestionsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
+      <div className="min-h-dvh flex flex-col relative overflow-hidden">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-teal-700 via-teal-500 to-cyan-400" />
+        </div>
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center glass-card p-6 rounded-xl">
-            <div className="w-12 h-12 border-t-4 border-indigo-400 border-solid rounded-full animate-spin mx-auto"></div>
-            <p className="mt-3 text-base text-gray-200">Loading your questions...</p>
+            <div className="w-12 h-12 border-t-4 border-white border-solid rounded-full animate-spin mx-auto"></div>
+            <p className="mt-3 text-base text-white/80">Loading your questions...</p>
           </div>
         </div>
         <Footer />
@@ -294,15 +307,18 @@ const QuestionsPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
+      <div className="min-h-dvh flex flex-col relative overflow-hidden">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-teal-700 via-teal-500 to-cyan-400" />
+        </div>
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center glass-card p-6 rounded-xl max-w-sm">
-            <h2 className="text-xl font-bold text-red-400 mb-3">Error Loading Questions</h2>
-            <p className="text-gray-300 mb-4">{error}</p>
+            <h2 className="text-xl font-bold text-red-300 mb-3">Error Loading Questions</h2>
+            <p className="text-white/80 mb-4">{error}</p>
             <button
               onClick={handleBackToUpload}
-              className="px-5 py-2 glass-button text-white font-medium rounded-xl hover:bg-white/20 transition-all"
+              className="px-5 py-2 glass-btn text-white font-medium rounded-xl hover:bg-white/20 transition-all"
             >
               Back to Upload
             </button>
@@ -315,15 +331,18 @@ const QuestionsPage = () => {
 
   if (!questionsData || questionsData.questions.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
+      <div className="min-h-dvh flex flex-col relative overflow-hidden">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-teal-700 via-teal-500 to-cyan-400" />
+        </div>
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center glass-card p-6 rounded-xl max-w-sm">
             <h2 className="text-xl font-bold text-white mb-3">No Questions Found</h2>
-            <p className="text-gray-300 mb-4">Please generate questions first.</p>
+            <p className="text-white/80 mb-4">Please generate questions first.</p>
             <button
               onClick={handleBackToUpload}
-              className="px-5 py-2 glass-button text-white font-medium rounded-xl hover:bg-white/20 transition-all"
+              className="px-5 py-2 glass-btn text-white font-medium rounded-xl hover:bg-white/20 transition-all"
             >
               Back to Upload
             </button>
@@ -338,12 +357,15 @@ const QuestionsPage = () => {
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
+      <div className="min-h-dvh flex flex-col relative overflow-hidden">
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-teal-700 via-teal-500 to-cyan-400" />
+        </div>
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center glass-card p-6 rounded-xl">
             <h2 className="text-xl font-bold text-white mb-3">Loading Question...</h2>
-            <div className="w-12 h-12 border-t-4 border-indigo-400 border-solid rounded-full animate-spin mx-auto"></div>
+            <div className="w-12 h-12 border-t-4 border-white border-solid rounded-full animate-spin mx-auto"></div>
           </div>
         </div>
         <Footer />
@@ -352,12 +374,13 @@ const QuestionsPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-indigo-900/30 via-purple-900/20 to-cyan-900/30">
-      {/* Decorative background elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob"></div>
-        <div className="absolute top-40 right-20 w-72 h-72 bg-indigo-500/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/3 w-72 h-72 bg-cyan-500/20 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+    <div className="min-h-dvh flex flex-col relative overflow-hidden">
+      {/* Teal gradient background */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-700 via-teal-500 to-cyan-400" />
+        {/* Decorative floating circles */}
+        <div className="hidden sm:block absolute top-20 right-10 w-16 h-16 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 opacity-80 animate-float shadow-lg" />
+        <div className="hidden sm:block absolute bottom-40 left-10 w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-500 opacity-60 animate-float-delayed" />
       </div>
 
       <Navbar />
@@ -366,8 +389,8 @@ const QuestionsPage = () => {
         <div className="container mx-auto px-4 max-w-2xl">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-white mb-3">Learning Journey</h1>
-            <p className="text-base text-gray-200">{questionsData.message}</p>
-            <p className="text-gray-300 mt-2">
+            <p className="text-base text-white/80">{questionsData.message}</p>
+            <p className="text-white/60 mt-2">
               Generated from {questionsData.filename} ({questionsData.page_count} pages)
             </p>
           </div>
@@ -379,7 +402,7 @@ const QuestionsPage = () => {
               </h2>
               <button
                 onClick={handleBackToUpload}
-                className="px-3 py-1.5 glass-button text-white font-medium rounded-lg hover:bg-white/20 transition-all text-sm"
+                className="px-3 py-1.5 glass-btn text-white font-medium rounded-lg hover:bg-white/20 transition-all text-sm"
               >
                 Upload Another File
               </button>
@@ -387,7 +410,7 @@ const QuestionsPage = () => {
 
             {questionsLoading ? (
               <div className="flex justify-center items-center py-6">
-                <div className="w-12 h-12 border-t-4 border-indigo-400 border-solid rounded-full animate-spin mx-auto"></div>
+                <div className="w-12 h-12 border-t-4 border-white border-solid rounded-full animate-spin mx-auto"></div>
               </div>
             ) : (
               <div className="glass-question rounded-lg p-4">
@@ -419,13 +442,13 @@ const QuestionsPage = () => {
                               ? choice.id === currentQuestion.correct_answer
                                 ? 'bg-green-400 text-white'
                                 : 'bg-red-400 text-white'
-                              : 'bg-indigo-400 text-white'
-                            : 'bg-white/30 text-white'
+                              : 'bg-white/30 text-white'
+                            : 'bg-white/20 text-white'
                         }`}
                       >
                         {choice.id}
                       </span>
-                      <span className="text-gray-200 flex-grow text-sm">
+                      <span className="text-white/90 flex-grow text-sm">
                         {choice.text}
                       </span>
                     </div>
@@ -439,8 +462,8 @@ const QuestionsPage = () => {
                       disabled={!selectedChoice}
                       className={`px-4 py-2 font-medium rounded-lg transition-all text-sm ${
                         selectedChoice
-                          ? 'bg-indigo-600/80 text-white hover:bg-indigo-600/90 backdrop-blur-sm'
-                          : 'bg-gray-500/40 text-gray-400 cursor-not-allowed'
+                          ? 'btn-primary hover:scale-105'
+                          : 'bg-white/10 text-white/40 cursor-not-allowed'
                       }`}
                     >
                       Check Answer
@@ -463,8 +486,8 @@ const QuestionsPage = () => {
                     
                     {validationResult?.explanation && (
                       <div className="glass-choice p-3 rounded-lg">
-                        <p className="font-medium text-indigo-300 text-sm">Explanation:</p>
-                        <p className="mt-1 text-gray-200 text-sm">{validationResult.explanation}</p>
+                        <p className="font-medium text-cyan-200 text-sm">Explanation:</p>
+                        <p className="mt-1 text-white/90 text-sm">{validationResult.explanation}</p>
                       </div>
                     )}
                     
@@ -474,8 +497,8 @@ const QuestionsPage = () => {
                         disabled={currentQuestionIndex === 0}
                         className={`px-3 py-1.5 rounded-lg ${
                           currentQuestionIndex === 0
-                            ? 'glass-button bg-gray-500/30 text-gray-400 cursor-not-allowed text-sm'
-                            : 'glass-button text-white hover:bg-white/20 text-sm'
+                            ? 'glass-btn bg-white/5 text-white/40 cursor-not-allowed text-sm'
+                            : 'glass-btn text-white hover:bg-white/20 text-sm'
                         }`}
                       >
                         Previous
@@ -486,8 +509,8 @@ const QuestionsPage = () => {
                         disabled={currentQuestionIndex === totalQuestions - 1}
                         className={`px-3 py-1.5 rounded-lg ${
                           currentQuestionIndex === totalQuestions - 1
-                            ? 'glass-button bg-gray-500/30 text-gray-400 cursor-not-allowed text-sm'
-                            : 'glass-button text-white hover:bg-white/20 text-sm'
+                            ? 'glass-btn bg-white/5 text-white/40 cursor-not-allowed text-sm'
+                            : 'glass-btn text-white hover:bg-white/20 text-sm'
                         }`}
                       >
                         Next Question
@@ -502,7 +525,7 @@ const QuestionsPage = () => {
           <div className="text-center">
             <button
               onClick={handleBackToUpload}
-              className="px-5 py-2 glass-button text-white font-medium rounded-xl hover:bg-white/20 transition-all text-sm"
+              className="px-5 py-2 glass-btn text-white font-medium rounded-xl hover:bg-white/20 transition-all text-sm"
             >
               Upload Another File
             </button>
@@ -511,32 +534,6 @@ const QuestionsPage = () => {
       </main>
 
       <Footer />
-
-      <style jsx global>{`
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
     </div>
   );
 };

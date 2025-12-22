@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from app.constants.paths import UPLOAD_DIRECTORY
 from app.exceptions.exception_handlers import setup_exception_handlers
 from app.routes import study
+from app.routes import progress
 from app.database import create_tables
 from app.auth.auth import auth_backend, fastapi_users
 from app.schemas.user import UserRead, UserCreate
@@ -39,6 +40,7 @@ app.include_router(
 
 # Include routers for different services
 app.include_router(study.router, prefix="/api/v1", tags=["studies"])
+app.include_router(progress.router, prefix="/api/v1", tags=["progress"])
 
 
 @app.get("/")

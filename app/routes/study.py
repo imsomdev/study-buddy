@@ -515,3 +515,53 @@ async def get_file(
         raise FileValidationException("File not found on disk")
         
     return FileResponse(file_path)
+
+
+@router.get("/documents", response_model=List[dict])
+async def get_documents(
+    db: Session = Depends(get_db),
+    user: User = Depends(current_active_user)
+):
+    """
+    Get all documents uploaded by the current user.
+    
+    Returns a list of documents with their metadata including
+    question count and flashcard count.
+    """
+    from app.database.models import Flashcard
+    
+    # Get all documents for this user
+    documents = (
+        db.query(StudyDocument)
+        .filter(StudyDocument.user_id == user.id, StudyDocument.is_active == True)
+        .order_by(StudyDocument.created_at.desc())
+        .all()
+    )
+    
+    result = []
+    for doc in documents:
+        # Count questions for this document
+        questions_count = (
+            db.query(DBMCQQuestion)
+            .filter(DBMCQQuestion.document_id == doc.id)
+            .count()
+        )
+        
+        # Count flashcards for this document
+        flashcards_count = (
+            db.query(Flashcard)
+            .filter(Flashcard.document_id == doc.id)
+            .count()
+        )
+        
+        result.append({
+            "id": doc.id,
+            "filename": doc.filename,
+            "created_at": doc.created_at.isoformat() if doc.created_at else None,
+            "summary": doc.summary,
+            "key_concepts": doc.key_concepts,
+            "questions_count": questions_count,
+            "flashcards_count": flashcards_count
+        })
+    
+    return result

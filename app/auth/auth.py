@@ -14,7 +14,7 @@ load_dotenv()
 
 SECRET = os.getenv("JWT_SECRET", "SECRET_KEY_CHANGEME")
 
-bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
+bearer_transport = BearerTransport(tokenUrl="/api/v1/auth/jwt/login")
 
 
 def get_jwt_strategy() -> JWTStrategy:

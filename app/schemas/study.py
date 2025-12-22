@@ -92,3 +92,19 @@ class AnswerValidationResponse(BaseModel):
     explanation: str = ""
     choices: List[MCQChoice]
     question: str
+
+
+class DocumentResponse(BaseModel):
+    """
+    Schema for document information in the documents list.
+    """
+    id: int
+    filename: str
+    created_at: str
+    summary: str | None = None
+    key_concepts: str | None = None
+    questions_count: int = 0
+    flashcards_count: int = 0
+
+    class Config:
+        from_attributes = True
