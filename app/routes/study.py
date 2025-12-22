@@ -24,10 +24,13 @@ from app.schemas.study import (
     UploadResponse,
     AnswerValidationRequest,
     AnswerValidationResponse,
+    FlashcardResponse,
+    FlashcardGenerationResponse,
 )
 from app.services.extraction_service import extract_text_from_file
 from app.services.llm_service import (
     generate_mcq_questions_from_pages,
+    generate_flashcards_from_pages,
 )
 from app.auth.auth import current_active_user
 from app.database.models import User
@@ -565,3 +568,103 @@ async def get_documents(
         })
     
     return result
+
+
+@router.post("/generate-flashcards/{filename}", response_model=FlashcardGenerationResponse)
+async def generate_flashcards(
+    filename: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(current_active_user)
+):
+    """
+    Generate flashcards from a document.
+    
+    If flashcards already exist for this document, returns the existing ones.
+    Otherwise, generates new flashcards using AI and stores them in the database.
+    """
+    from app.database.models import Flashcard
+    
+    # Get the document from the database
+    db_document = (
+        db.query(StudyDocument)
+        .filter(StudyDocument.filename == filename, StudyDocument.user_id == user.id)
+        .first()
+    )
+    if not db_document:
+        raise FileValidationException(f"Document not found or access denied: {filename}")
+    
+    # Check if flashcards already exist for this document
+    existing_flashcards = (
+        db.query(Flashcard)
+        .filter(Flashcard.document_id == db_document.id)
+        .all()
+    )
+    
+    if existing_flashcards:
+        # Return existing flashcards
+        flashcard_responses = [
+            FlashcardResponse(
+                id=card.id,
+                front=card.front,
+                back=card.back,
+                explanation=card.explanation or ""
+            )
+            for card in existing_flashcards
+        ]
+        return FlashcardGenerationResponse(
+            filename=filename,
+            flashcards=flashcard_responses,
+            message="Flashcards retrieved from cache"
+        )
+    
+    # Generate new flashcards
+    file_location = os.path.join(UPLOAD_DIRECTORY, filename)
+    
+    if not os.path.exists(file_location):
+        raise FileValidationException(f"File not found on disk: {filename}")
+    
+    try:
+        # Extract text from the file
+        pages_text = extract_text_from_file(file_location)
+        
+        if not pages_text:
+            raise LLMProcessingException("No text could be extracted from the document")
+        
+        # Generate flashcards using AI
+        generated_flashcards = await generate_flashcards_from_pages(pages_text, num_cards_per_page=5)
+        
+        if not generated_flashcards:
+            raise LLMProcessingException("Could not generate flashcards from the document")
+        
+        # Store flashcards in database
+        flashcard_responses = []
+        for idx, card_data in enumerate(generated_flashcards):
+            db_flashcard = Flashcard(
+                document_id=db_document.id,
+                front=card_data["front"],
+                back=card_data["back"],
+                explanation=card_data.get("explanation", "")
+            )
+            db.add(db_flashcard)
+            db.flush()  # Get the ID
+            
+            flashcard_responses.append(
+                FlashcardResponse(
+                    id=db_flashcard.id,
+                    front=db_flashcard.front,
+                    back=db_flashcard.back,
+                    explanation=db_flashcard.explanation or ""
+                )
+            )
+        
+        db.commit()
+        
+        return FlashcardGenerationResponse(
+            filename=filename,
+            flashcards=flashcard_responses,
+            message=f"Generated {len(flashcard_responses)} flashcards successfully"
+        )
+        
+    except Exception as e:
+        db.rollback()
+        raise LLMProcessingException(f"Error generating flashcards: {str(e)}")

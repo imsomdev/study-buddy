@@ -121,3 +121,90 @@ async def generate_mcq_questions_from_pages(
         await asyncio.sleep(0.5)
 
     return all_questions
+
+
+async def generate_flashcards_from_pages(
+    pages_text: List[str], num_cards_per_page: int = 5
+) -> List[dict]:
+    """
+    Generate flashcards from document pages using Cerebras API.
+
+    Args:
+        pages_text: List of text content from each page
+        num_cards_per_page: Number of flashcards to generate per page
+
+    Returns:
+        List of flashcard dictionaries with front, back, and explanation
+    """
+    all_flashcards = []
+
+    for page_idx, page_text in enumerate(pages_text):
+        if not page_text.strip():
+            continue
+
+        # Construct the prompt for the API
+        prompt = f"""
+        You are an educational expert. Based on the following text content, generate {num_cards_per_page} study flashcards.
+        Each flashcard should have:
+        - A question or term on the front
+        - The answer or definition on the back
+        - A brief explanation for better understanding
+        
+        Focus on key concepts, definitions, and important facts from the text.
+        
+        The output should be in JSON format as follows:
+        
+        {{
+            "flashcards": [
+                {{
+                    "front": "What is the definition of X?",
+                    "back": "X is defined as...",
+                    "explanation": "This concept is important because..."
+                }}
+            ]
+        }}
+        
+        Here is the text content:
+        {page_text[:4000]}
+        """
+
+        try:
+            # Call the Cerebras API
+            response = await client.chat.completions.create(
+                model="qwen-3-235b-a22b-instruct-2507",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an educational expert that creates study flashcards from text content. Always respond with valid JSON format only, without any additional text.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.3,
+                response_format={"type": "json_object"},
+            )
+
+            # Extract the JSON response
+            content = response.choices[0].message.content
+            parsed_response = json.loads(content)
+
+            # Extract flashcards from the response
+            flashcards = parsed_response.get("flashcards", [])
+
+            for card in flashcards:
+                all_flashcards.append({
+                    "front": card.get("front", ""),
+                    "back": card.get("back", ""),
+                    "explanation": card.get("explanation", "")
+                })
+
+        except json.JSONDecodeError:
+            print(f"Error: Could not parse JSON response for page {page_idx}")
+            continue
+        except Exception as e:
+            print(f"Error calling Cloud API for page {page_idx}: {str(e)}")
+            continue
+
+        # Small delay to avoid rate limiting
+        await asyncio.sleep(0.5)
+
+    return all_flashcards

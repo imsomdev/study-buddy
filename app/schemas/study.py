@@ -108,3 +108,22 @@ class DocumentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class FlashcardResponse(BaseModel):
+    """
+    Schema for a single flashcard.
+    """
+    id: int
+    front: str
+    back: str
+    explanation: str = ""
+
+
+class FlashcardGenerationResponse(BaseModel):
+    """
+    Schema for the response returned after generating flashcards.
+    """
+    filename: str
+    flashcards: List[FlashcardResponse]
+    message: str = "Flashcards generated successfully"
