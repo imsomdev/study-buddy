@@ -1,6 +1,22 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
+from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 from app.database.config import Base
+
+
+class User(SQLAlchemyBaseUserTable[int], Base):
+    """
+    Model for storing user information, integrated with FastAPI Users
+    """
+    __tablename__ = "user"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    full_name = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationship to study documents
+    documents = relationship("StudyDocument", back_populates="owner")
 
 
 class StudyDocument(Base):
@@ -15,9 +31,14 @@ class StudyDocument(Base):
     file_path = Column(String, nullable=False)
     file_url = Column(String, nullable=False)
     page_count = Column(Integer, nullable=True)
+    user_id = Column(Integer, ForeignKey("user.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     is_active = Column(Boolean, default=True)
+
+    # Relationships
+    owner = relationship("User", back_populates="documents")
+    questions = relationship("MCQQuestion", back_populates="document", cascade="all, delete-orphan")
 
 
 class MCQQuestion(Base):
@@ -27,7 +48,7 @@ class MCQQuestion(Base):
     __tablename__ = "mcq_questions"
 
     id = Column(Integer, primary_key=True, index=True)
-    document_id = Column(Integer, nullable=False)  # Foreign key to StudyDocument
+    document_id = Column(Integer, ForeignKey("study_documents.id"), nullable=False)
     question = Column(Text, nullable=False)
     choices = Column(Text, nullable=False)  # JSON string of choices
     correct_answer = Column(String, nullable=False)
@@ -35,3 +56,6 @@ class MCQQuestion(Base):
     page_number = Column(Integer, nullable=True)  # Page from which the question was generated
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    document = relationship("StudyDocument", back_populates="questions")

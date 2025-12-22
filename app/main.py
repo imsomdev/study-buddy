@@ -5,6 +5,8 @@ from app.constants.paths import UPLOAD_DIRECTORY
 from app.exceptions.exception_handlers import setup_exception_handlers
 from app.routes import study
 from app.database import create_tables
+from app.auth.auth import auth_backend, fastapi_users
+from app.schemas.user import UserRead, UserCreate
 
 app = FastAPI(
     title="Study Buddy API", description="API for managing study resources and notes"
@@ -23,6 +25,18 @@ app.add_middleware(
 
 # Initialize database tables
 create_tables()
+
+# Auth routers
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend),
+    prefix="/api/v1/auth/jwt",
+    tags=["auth"],
+)
+app.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    prefix="/api/v1/auth",
+    tags=["auth"],
+)
 
 # Include routers for different services
 app.include_router(study.router, prefix="/api/v1", tags=["studies"])
