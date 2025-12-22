@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL, API_ENDPOINTS } from "../lib/api";
-import { Upload, FileText, Eye, Sparkles, X, Check, Loader2, Image } from "lucide-react";
+import { Upload, FileText, Eye, Sparkles, X, Check, Loader2, Image, Lock } from "lucide-react";
+import Link from "next/link";
 
 type FileType = "pdf" | "docx" | "txt" | null;
 
@@ -41,6 +42,12 @@ const FileUpload = () => {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsAuthenticated(!!token);
+  }, []);
 
   const validateFile = (file: File): boolean => {
     const validTypes = [
@@ -137,6 +144,11 @@ const FileUpload = () => {
   const handleActualUpload = async () => {
     if (!file) return;
 
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
 
@@ -208,6 +220,11 @@ const FileUpload = () => {
 
   const handleStartJourney = async () => {
     if (!file) return;
+
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
 
     setIsGeneratingQuestions(true);
 
@@ -317,7 +334,7 @@ const FileUpload = () => {
       )}
 
       {/* Main Upload Area */}
-      <div className="glass-panel p-4 sm:p-6 animate-glow">
+      <div className="glass-panel p-4 sm:p-6 animate-glow overflow-hidden relative">
         {!file && !isUploadComplete ? (
           /* Drop Zone */
           <div
@@ -356,6 +373,12 @@ const FileUpload = () => {
               <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-white/60">
                 Supports PDF, DOCX, and TXT files
               </p>
+              {!isAuthenticated && (
+                <div className="mt-4 flex items-center justify-center gap-1.5 text-white/30 text-[10px] uppercase tracking-widest font-bold">
+                  <Lock className="w-2.5 h-2.5" />
+                  <span>SignIn Required</span>
+                </div>
+              )}
             </div>
             <input
               type="file"
@@ -527,6 +550,12 @@ const FileUpload = () => {
                   "Upload File"
                 )}
               </button>
+              {!isAuthenticated && (
+                <div className="mt-3 flex items-center justify-center gap-1.5 text-white/30 text-[10px] uppercase tracking-widest font-bold">
+                  <Lock className="w-2.5 h-2.5" />
+                  <span>SignIn Required</span>
+                </div>
+              )}
             </div>
           </div>
         )}

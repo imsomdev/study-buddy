@@ -11,7 +11,6 @@ from app.schemas.user import UserRead, UserCreate
 app = FastAPI(
     title="Study Buddy API", description="API for managing study resources and notes"
 )
-app.mount("/files", StaticFiles(directory=UPLOAD_DIRECTORY), name="uploads")
 # Setup exception handlers
 setup_exception_handlers(app)
 # Add CORS middleware

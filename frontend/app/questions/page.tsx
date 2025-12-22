@@ -85,6 +85,13 @@ const QuestionsPage = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check if authenticated
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
     // Get the questions data from sessionStorage or localStorage
     const storedData = sessionStorage.getItem('generatedQuestions');
     if (storedData) {
@@ -109,11 +116,15 @@ const QuestionsPage = () => {
     if (questionsData?.filename) {
       const fetchQuestionCount = async () => {
         try {
-          const response = await fetch(API_ENDPOINTS.mcqQuestionCount(questionsData.filename));
+          const token = localStorage.getItem('token');
+          const response = await fetch(API_ENDPOINTS.mcqQuestionCount(questionsData.filename), {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          });
           if (response.ok) {
             const count: number = await response.json();
             setTotalQuestions(count);
           } else {
+            if (response.status === 401) router.push('/login');
             throw new Error(`Failed to get question count: ${response.status} ${response.statusText}`);
           }
         } catch (err) {
@@ -135,7 +146,10 @@ const QuestionsPage = () => {
       const fetchQuestion = async () => {
         setQuestionsLoading(true);
         try {
-          const response = await fetch(API_ENDPOINTS.mcqQuestions(questionsData.filename, currentQuestionIndex));
+          const token = localStorage.getItem('token');
+          const response = await fetch(API_ENDPOINTS.mcqQuestions(questionsData.filename, currentQuestionIndex), {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          });
           if (response.ok) {
             const question = await response.json();
             // Update the questions array with the fetched question at the current index
@@ -157,6 +171,7 @@ const QuestionsPage = () => {
               };
             });
           } else {
+            if (response.status === 401) router.push('/login');
             throw new Error(`Failed to get question: ${response.status} ${response.statusText}`);
           }
         } catch (err) {
@@ -219,10 +234,12 @@ const QuestionsPage = () => {
     if (!selectedChoice || !questionsData?.questions[currentQuestionIndex]) return;
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(API_ENDPOINTS.validateAnswer, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
           question_id: questionsData.questions[currentQuestionIndex].id,
