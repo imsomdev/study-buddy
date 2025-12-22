@@ -18,4 +18,8 @@ export const API_ENDPOINTS = {
       filename
     )}/${questionIndex}`,
   validateAnswer: `${API_BASE_URL}/api/v1/validate-answer/`,
+  // Auth endpoints
+  login: `${API_BASE_URL}/api/v1/auth/jwt/login`,
+  register: `${API_BASE_URL}/api/v1/auth/register`,
+  me: `${API_BASE_URL}/api/v1/users/me`,
 };

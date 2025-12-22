@@ -1,11 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ModeToggle } from '@/components/mode-toggle';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    setIsAuthenticated(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
+    setIsMenuOpen(false);
+    window.location.href = '/';
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50">
@@ -52,20 +66,40 @@ const Navbar = () => {
       >
         <div className="mr-4 sm:mr-6 lg:mr-12 mt-2 p-4 sm:p-5 rounded-2xl bg-white/10 backdrop-blur-lg border border-white/10 shadow-sm  w-fit min-w-[160px] sm:min-w-[200px]">
           <div className="flex flex-col space-y-2">
-            <Link
-              href="/login"
-              className="px-4 sm:px-5 py-2.5 sm:py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 text-sm sm:text-base font-medium whitespace-nowrap"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Login
-            </Link>
-            <Link
-              href="/signup"
-              className="px-4 sm:px-5 py-2.5 sm:py-3 text-white bg-white/15 hover:bg-white/25 rounded-xl transition-all duration-300 text-sm sm:text-base font-medium text-center border border-white/20 whitespace-nowrap"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Sign Up
-            </Link>
+            {!isAuthenticated ? (
+              <>
+                <Link
+                  href="/login"
+                  className="px-4 sm:px-5 py-2.5 sm:py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 text-sm sm:text-base font-medium whitespace-nowrap"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/signup"
+                  className="px-4 sm:px-5 py-2.5 sm:py-3 text-white bg-white/15 hover:bg-white/25 rounded-xl transition-all duration-300 text-sm sm:text-base font-medium text-center border border-white/20 whitespace-nowrap"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign Up
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="px-4 sm:px-5 py-2.5 sm:py-3 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 text-sm sm:text-base font-medium whitespace-nowrap"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 sm:px-5 py-2.5 sm:py-3 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition-all duration-300 text-sm sm:text-base font-medium text-left whitespace-nowrap"
+                >
+                  Logout
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -154,8 +154,13 @@ const FileUpload = () => {
       const formData = new FormData();
       formData.append("file", file);
 
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const response = await fetch(API_ENDPOINTS.uploadFile, {
         method: "POST",
+        headers: headers,
         body: formData,
       });
 
@@ -183,7 +188,7 @@ const FileUpload = () => {
         });
         setIsUploading(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload error:", error);
       clearInterval(progressInterval);
       setNotification({
@@ -210,8 +215,13 @@ const FileUpload = () => {
       const formData = new FormData();
       formData.append("file", file);
 
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const authHeader: Record<string, string> = {};
+      if (token) authHeader['Authorization'] = `Bearer ${token}`;
+
       const uploadResponse = await fetch(API_ENDPOINTS.uploadFile, {
         method: "POST",
+        headers: authHeader,
         body: formData,
       });
 
@@ -226,6 +236,7 @@ const FileUpload = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...authHeader,
         },
         body: JSON.stringify({
           file_url: uploadResult.file_url,
@@ -254,7 +265,7 @@ const FileUpload = () => {
       });
 
       router.push("/questions");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Question generation error:", error);
       setNotification({
         type: "error",
