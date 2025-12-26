@@ -1,3 +1,4 @@
+import logging
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -20,6 +21,8 @@ from app.schemas.progress import (
 )
 from app.auth.auth import current_active_user
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(
     prefix="/progress",
     tags=["progress"],
@@ -39,6 +42,8 @@ async def record_progress(
     This endpoint saves the user's response including whether they got it correct.
     Multiple attempts for the same question are allowed and tracked.
     """
+    logger.info(f"POST /progress/record - user_id: {user.id}, question_id: {request.question_id}, document_id: {request.document_id}")
+    
     # Verify the document belongs to the user
     db_document = (
         db.query(StudyDocument)
@@ -46,6 +51,7 @@ async def record_progress(
         .first()
     )
     if not db_document:
+        logger.warning(f"POST /progress/record - Document not found: {request.document_id} for user_id: {user.id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Document not found or access denied: {request.document_id}"
@@ -58,6 +64,7 @@ async def record_progress(
         .first()
     )
     if not db_question:
+        logger.warning(f"POST /progress/record - Question not found: {request.question_id} for document_id: {request.document_id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Question not found or doesn't belong to document: {request.question_id}"
@@ -76,6 +83,7 @@ async def record_progress(
     db.commit()
     db.refresh(progress)
     
+    logger.info(f"POST /progress/record - Recorded progress_id: {progress.id}, is_correct: {request.is_correct}")
     return ProgressRecordResponse(
         id=progress.id,
         user_id=progress.user_id,
@@ -98,6 +106,8 @@ async def get_document_progress(
     
     Returns statistics including total questions, attempted, correct, and accuracy.
     """
+    logger.info(f"GET /progress/document/{document_id} - user_id: {user.id}")
+    
     # Verify the document belongs to the user
     db_document = (
         db.query(StudyDocument)
@@ -105,6 +115,7 @@ async def get_document_progress(
         .first()
     )
     if not db_document:
+        logger.warning(f"GET /progress/document/{document_id} - Document not found for user_id: {user.id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Document not found or access denied: {document_id}"
@@ -153,6 +164,7 @@ async def get_document_progress(
         .scalar()
     )
     
+    logger.info(f"GET /progress/document/{document_id} - Returning stats: attempted={questions_attempted}, correct={correct_count}, accuracy={round(accuracy, 2)}%")
     return DocumentProgressResponse(
         document_id=document_id,
         document_filename=db_document.filename,
@@ -175,6 +187,8 @@ async def get_overall_stats(
     
     Returns aggregate statistics and per-document breakdown.
     """
+    logger.info(f"GET /progress/stats - user_id: {user.id}")
+    
     # Get all documents studied by this user
     documents_with_progress = (
         db.query(StudyDocument)
@@ -251,6 +265,7 @@ async def get_overall_stats(
     
     overall_accuracy = (total_correct / total_questions_attempted * 100) if total_questions_attempted > 0 else 0.0
     
+    logger.info(f"GET /progress/stats - user_id: {user.id}, documents_studied: {len(documents_progress)}, total_attempted: {total_questions_attempted}, overall_accuracy: {round(overall_accuracy, 2)}%")
     return OverallStatsResponse(
         total_documents_studied=len(documents_progress),
         total_questions_attempted=total_questions_attempted,
@@ -272,6 +287,8 @@ async def get_question_history(
     
     Returns all attempts made by the user on this question.
     """
+    logger.info(f"GET /progress/question/{question_id} - user_id: {user.id}")
+    
     # Verify the question exists and belongs to user's document
     db_question = (
         db.query(DBMCQQuestion)
@@ -280,6 +297,7 @@ async def get_question_history(
         .first()
     )
     if not db_question:
+        logger.warning(f"GET /progress/question/{question_id} - Question not found for user_id: {user.id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Question not found or access denied: {question_id}"
@@ -309,6 +327,7 @@ async def get_question_history(
     incorrect_attempts = total_attempts - correct_attempts
     accuracy = (correct_attempts / total_attempts * 100) if total_attempts > 0 else 0.0
     
+    logger.info(f"GET /progress/question/{question_id} - Returning history: {total_attempts} attempts, accuracy: {round(accuracy, 2)}%")
     return QuestionHistoryResponse(
         question_id=question_id,
         question_text=db_question.question,
@@ -331,6 +350,8 @@ async def clear_document_progress(
     
     This deletes all progress records for the specified document.
     """
+    logger.info(f"DELETE /progress/document/{document_id} - user_id: {user.id}")
+    
     # Verify the document belongs to the user
     db_document = (
         db.query(StudyDocument)
@@ -338,16 +359,19 @@ async def clear_document_progress(
         .first()
     )
     if not db_document:
+        logger.warning(f"DELETE /progress/document/{document_id} - Document not found for user_id: {user.id}")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Document not found or access denied: {document_id}"
         )
     
     # Delete all progress for this document
-    db.query(UserProgress).filter(
+    deleted_count = db.query(UserProgress).filter(
         UserProgress.user_id == user.id,
         UserProgress.document_id == document_id
     ).delete()
     
     db.commit()
+    
+    logger.info(f"DELETE /progress/document/{document_id} - Cleared {deleted_count} progress records for user_id: {user.id}")
     return None
