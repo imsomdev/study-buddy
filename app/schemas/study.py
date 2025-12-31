@@ -78,6 +78,7 @@ class AnswerValidationRequest(BaseModel):
     """
     Schema for validating a user's answer to a question.
     """
+
     question_id: int
     selected_choice: str
 
@@ -86,6 +87,7 @@ class AnswerValidationResponse(BaseModel):
     """
     Schema for the response returned after validating a user's answer.
     """
+
     question_id: int
     is_correct: bool
     correct_answer: str
@@ -98,6 +100,7 @@ class DocumentResponse(BaseModel):
     """
     Schema for document information in the documents list.
     """
+
     id: int
     filename: str
     created_at: str
@@ -114,6 +117,7 @@ class FlashcardResponse(BaseModel):
     """
     Schema for a single flashcard.
     """
+
     id: int
     front: str
     back: str
@@ -124,6 +128,7 @@ class FlashcardGenerationResponse(BaseModel):
     """
     Schema for the response returned after generating flashcards.
     """
+
     filename: str
     flashcards: List[FlashcardResponse]
     message: str = "Flashcards generated successfully"

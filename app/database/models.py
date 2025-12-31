@@ -9,21 +9,25 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     """
     Model for storing user information, integrated with FastAPI Users
     """
+
     __tablename__ = "user"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     full_name = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
+
     # Relationships
     documents = relationship("StudyDocument", back_populates="owner")
-    progress = relationship("UserProgress", back_populates="user", cascade="all, delete-orphan")
+    progress = relationship(
+        "UserProgress", back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class StudyDocument(Base):
     """
     Model for storing information about uploaded study documents
     """
+
     __tablename__ = "study_documents"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -41,15 +45,22 @@ class StudyDocument(Base):
 
     # Relationships
     owner = relationship("User", back_populates="documents")
-    questions = relationship("MCQQuestion", back_populates="document", cascade="all, delete-orphan")
-    flashcards = relationship("Flashcard", back_populates="document", cascade="all, delete-orphan")
-    progress = relationship("UserProgress", back_populates="document", cascade="all, delete-orphan")
+    questions = relationship(
+        "MCQQuestion", back_populates="document", cascade="all, delete-orphan"
+    )
+    flashcards = relationship(
+        "Flashcard", back_populates="document", cascade="all, delete-orphan"
+    )
+    progress = relationship(
+        "UserProgress", back_populates="document", cascade="all, delete-orphan"
+    )
 
 
 class MCQQuestion(Base):
     """
     Model for storing generated MCQ questions
     """
+
     __tablename__ = "mcq_questions"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -58,19 +69,24 @@ class MCQQuestion(Base):
     choices = Column(Text, nullable=False)  # JSON string of choices
     correct_answer = Column(String, nullable=False)
     explanation = Column(Text, nullable=True)
-    page_number = Column(Integer, nullable=True)  # Page from which the question was generated
+    page_number = Column(
+        Integer, nullable=True
+    )  # Page from which the question was generated
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
     document = relationship("StudyDocument", back_populates="questions")
-    progress = relationship("UserProgress", back_populates="question", cascade="all, delete-orphan")
+    progress = relationship(
+        "UserProgress", back_populates="question", cascade="all, delete-orphan"
+    )
 
 
 class Flashcard(Base):
     """
     Model for storing generated flashcards for study documents
     """
+
     __tablename__ = "flashcards"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -88,6 +104,7 @@ class UserProgress(Base):
     """
     Model for tracking user progress on MCQ questions
     """
+
     __tablename__ = "user_progress"
 
     id = Column(Integer, primary_key=True, index=True)

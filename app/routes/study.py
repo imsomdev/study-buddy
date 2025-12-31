@@ -53,7 +53,7 @@ async def create_upload_file(
     user: User = Depends(current_active_user),
 ):
     logger.info(f"POST /uploadfile/ - user_id: {user.id}, filename: {file.filename}")
-    
+
     # 1. Validate the file extension
     if not file.filename:
         logger.warning(f"POST /uploadfile/ - No file provided for user_id: {user.id}")
@@ -61,14 +61,18 @@ async def create_upload_file(
 
     file_extension = os.path.splitext(file.filename)[1].lower()
     if file_extension not in ALLOWED_EXTENSIONS:
-        logger.warning(f"POST /uploadfile/ - Invalid extension '{file_extension}' for user_id: {user.id}")
+        logger.warning(
+            f"POST /uploadfile/ - Invalid extension '{file_extension}' for user_id: {user.id}"
+        )
         raise FileValidationException(
             f"File extension '{file_extension}' is not allowed. Allowed extensions are: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
     # 2. Validate the MIME type
     if file.content_type not in ALLOWED_MIME_TYPES:
-        logger.warning(f"POST /uploadfile/ - Invalid MIME type '{file.content_type}' for user_id: {user.id}")
+        logger.warning(
+            f"POST /uploadfile/ - Invalid MIME type '{file.content_type}' for user_id: {user.id}"
+        )
         raise FileValidationException(
             f"File content type '{file.content_type}' is not allowed."
         )
@@ -99,12 +103,16 @@ async def create_upload_file(
         db.add(db_document)
         db.commit()
         db.refresh(db_document)
-        
-        logger.info(f"POST /uploadfile/ - Successfully uploaded file '{safe_filename}' (id: {db_document.id}, pages: {page_count}) for user_id: {user.id}")
+
+        logger.info(
+            f"POST /uploadfile/ - Successfully uploaded file '{safe_filename}' (id: {db_document.id}, pages: {page_count}) for user_id: {user.id}"
+        )
 
     except Exception as e:
         db.rollback()
-        logger.error(f"POST /uploadfile/ - Upload failed for user_id: {user.id}, error: {str(e)}")
+        logger.error(
+            f"POST /uploadfile/ - Upload failed for user_id: {user.id}, error: {str(e)}"
+        )
         raise FileUploadException(str(e))
     finally:
         await file.close()
@@ -118,9 +126,9 @@ async def create_upload_file(
 
 @router.post("/generate-mcq/", response_model=MCQGenerationResponse)
 async def generate_mcq_questions(
-    request: MCQRequest, 
+    request: MCQRequest,
     db: Session = Depends(get_db),
-    user: User = Depends(current_active_user)
+    user: User = Depends(current_active_user),
 ):
     """
     Generate MCQ questions from an existing file URL.
@@ -135,12 +143,16 @@ async def generate_mcq_questions(
     """
     # Extract filename from the URL
     filename = unquote(request.file_url.split("/")[-1])
-    logger.info(f"POST /generate-mcq/ - user_id: {user.id}, filename: {filename}, num_questions: {request.num_questions}")
+    logger.info(
+        f"POST /generate-mcq/ - user_id: {user.id}, filename: {filename}, num_questions: {request.num_questions}"
+    )
 
     # Validate the file extension
     file_extension = os.path.splitext(filename)[1].lower()
     if file_extension not in ALLOWED_EXTENSIONS:
-        logger.warning(f"POST /generate-mcq/ - Invalid extension '{file_extension}' for user_id: {user.id}")
+        logger.warning(
+            f"POST /generate-mcq/ - Invalid extension '{file_extension}' for user_id: {user.id}"
+        )
         raise FileValidationException(
             f"File extension '{file_extension}' is not allowed. Allowed extensions are: {', '.join(ALLOWED_EXTENSIONS)}"
         )
@@ -160,19 +172,27 @@ async def generate_mcq_questions(
         # Get the document from the database based on the filename and user
         db_document = (
             db.query(StudyDocument)
-            .filter(StudyDocument.filename == filename, StudyDocument.user_id == user.id)
+            .filter(
+                StudyDocument.filename == filename, StudyDocument.user_id == user.id
+            )
             .first()
         )
         if not db_document:
-            logger.warning(f"POST /generate-mcq/ - Document not found in DB: {filename} for user_id: {user.id}")
-            raise FileValidationException(f"Document not found or access denied: {filename}")
+            logger.warning(
+                f"POST /generate-mcq/ - Document not found in DB: {filename} for user_id: {user.id}"
+            )
+            raise FileValidationException(
+                f"Document not found or access denied: {filename}"
+            )
 
         # Process first page and return results immediately
         first_page_questions = []
         if pages_text:
             first_page_text = pages_text[0]
             if first_page_text.strip():
-                logger.info(f"POST /generate-mcq/ - Generating questions for first page of {filename}")
+                logger.info(
+                    f"POST /generate-mcq/ - Generating questions for first page of {filename}"
+                )
                 # Generate questions for the first page
                 page_questions = await generate_mcq_questions_from_pages(
                     [first_page_text], num_questions_per_page=request.num_questions
@@ -198,11 +218,15 @@ async def generate_mcq_questions(
 
                 # Commit after first page to ensure it's saved
                 db.commit()
-                logger.info(f"POST /generate-mcq/ - Generated {len(first_page_questions)} questions for first page of {filename}")
+                logger.info(
+                    f"POST /generate-mcq/ - Generated {len(first_page_questions)} questions for first page of {filename}"
+                )
 
         # Process remaining pages in the background if there are more than one page
         if len(pages_text) > 1:
-            logger.info(f"POST /generate-mcq/ - Starting background processing for {len(pages_text) - 1} remaining pages")
+            logger.info(
+                f"POST /generate-mcq/ - Starting background processing for {len(pages_text) - 1} remaining pages"
+            )
             # Create a background task to process remaining pages
             remaining_pages = pages_text[
                 1:
@@ -223,7 +247,9 @@ async def generate_mcq_questions(
                     )
 
                     if not background_document:
-                        logger.warning(f"Background MCQ - Document {filename} not found in background session")
+                        logger.warning(
+                            f"Background MCQ - Document {filename} not found in background session"
+                        )
                         return
 
                     for page_idx, page_text in enumerate(
@@ -259,11 +285,17 @@ async def generate_mcq_questions(
 
                         # Commit after each page to ensure data is stored
                         background_db.commit()
-                        logger.info(f"Background MCQ - Generated questions for page {page_idx} of {filename}")
-                        
-                    logger.info(f"Background MCQ - Completed processing all pages for {filename}")
+                        logger.info(
+                            f"Background MCQ - Generated questions for page {page_idx} of {filename}"
+                        )
+
+                    logger.info(
+                        f"Background MCQ - Completed processing all pages for {filename}"
+                    )
                 except Exception as e:
-                    logger.error(f"Background MCQ - Error processing remaining pages for {filename}: {str(e)}")
+                    logger.error(
+                        f"Background MCQ - Error processing remaining pages for {filename}: {str(e)}"
+                    )
                     background_db.rollback()
                 finally:
                     background_db.close()
@@ -274,7 +306,9 @@ async def generate_mcq_questions(
 
     except Exception as e:
         db.rollback()
-        logger.error(f"POST /generate-mcq/ - Error generating MCQ for {filename}: {str(e)}")
+        logger.error(
+            f"POST /generate-mcq/ - Error generating MCQ for {filename}: {str(e)}"
+        )
         raise LLMProcessingException(f"Error generating MCQ questions: {str(e)}")
 
     return MCQGenerationResponse(
@@ -287,9 +321,9 @@ async def generate_mcq_questions(
 
 @router.get("/mcq-questions/{document_filename}", response_model=List[MCQQuestion])
 async def get_mcq_questions(
-    document_filename: str, 
+    document_filename: str,
     db: Session = Depends(get_db),
-    user: User = Depends(current_active_user)
+    user: User = Depends(current_active_user),
 ):
     """
     Retrieve all MCQ questions for a specific document.
@@ -302,15 +336,20 @@ async def get_mcq_questions(
         List of MCQQuestion objects
     """
     logger.info(f"GET /mcq-questions/{document_filename} - user_id: {user.id}")
-    
+
     # Get the document from the database based on the filename and user
     db_document = (
         db.query(StudyDocument)
-        .filter(StudyDocument.filename == document_filename, StudyDocument.user_id == user.id)
+        .filter(
+            StudyDocument.filename == document_filename,
+            StudyDocument.user_id == user.id,
+        )
         .first()
     )
     if not db_document:
-        logger.warning(f"GET /mcq-questions/{document_filename} - Document not found for user_id: {user.id}")
+        logger.warning(
+            f"GET /mcq-questions/{document_filename} - Document not found for user_id: {user.id}"
+        )
         raise FileValidationException(
             f"Document not found or access denied: {document_filename}"
         )
@@ -338,7 +377,9 @@ async def get_mcq_questions(
                 for choice in choices_json
             ]
         except Exception as e:
-            logger.warning(f"GET /mcq-questions/{document_filename} - Error parsing choices JSON for question_id {db_question.id}: {str(e)}")
+            logger.warning(
+                f"GET /mcq-questions/{document_filename} - Error parsing choices JSON for question_id {db_question.id}: {str(e)}"
+            )
             # If parsing fails, create empty choices
             choices = []
 
@@ -352,15 +393,17 @@ async def get_mcq_questions(
         )
         questions.append(question)
 
-    logger.info(f"GET /mcq-questions/{document_filename} - Returning {len(questions)} questions")
+    logger.info(
+        f"GET /mcq-questions/{document_filename} - Returning {len(questions)} questions"
+    )
     return questions
 
 
 @router.post("/validate-answer/", response_model=AnswerValidationResponse)
 async def validate_answer(
-    request: AnswerValidationRequest, 
+    request: AnswerValidationRequest,
     db: Session = Depends(get_db),
-    user: User = Depends(current_active_user)
+    user: User = Depends(current_active_user),
 ):
     """
     Validate a user's answer for a specific question.
@@ -372,22 +415,30 @@ async def validate_answer(
     Returns:
         AnswerValidationResponse with correctness and explanation
     """
-    logger.info(f"POST /validate-answer/ - user_id: {user.id}, question_id: {request.question_id}, selected: {request.selected_choice}")
-    
+    logger.info(
+        f"POST /validate-answer/ - user_id: {user.id}, question_id: {request.question_id}, selected: {request.selected_choice}"
+    )
+
     # Get the question and verify ownership via document
     db_question = (
         db.query(DBMCQQuestion)
         .join(StudyDocument)
-        .filter(DBMCQQuestion.id == request.question_id, StudyDocument.user_id == user.id)
+        .filter(
+            DBMCQQuestion.id == request.question_id, StudyDocument.user_id == user.id
+        )
         .first()
     )
     if not db_question:
-        logger.warning(f"POST /validate-answer/ - Question not found: {request.question_id} for user_id: {user.id}")
-        raise FileValidationException(f"Question not found or access denied: {request.question_id}")
+        logger.warning(
+            f"POST /validate-answer/ - Question not found: {request.question_id} for user_id: {user.id}"
+        )
+        raise FileValidationException(
+            f"Question not found or access denied: {request.question_id}"
+        )
 
     # Check if the user's answer is correct
     is_correct = db_question.correct_answer == request.selected_choice
-    
+
     # Parse the choices from JSON strings back to proper format
     import json
     from app.schemas.study import MCQChoice
@@ -395,31 +446,36 @@ async def validate_answer(
     try:
         choices_json = json.loads(db_question.choices.replace("'", '"'))
         choices = [
-            MCQChoice(id=choice["id"], text=choice["text"])
-            for choice in choices_json
+            MCQChoice(id=choice["id"], text=choice["text"]) for choice in choices_json
         ]
     except Exception as e:
-        logger.warning(f"POST /validate-answer/ - Error parsing choices JSON for question_id {db_question.id}: {str(e)}")
+        logger.warning(
+            f"POST /validate-answer/ - Error parsing choices JSON for question_id {db_question.id}: {str(e)}"
+        )
         # If parsing fails, create empty choices
         choices = []
 
-    logger.info(f"POST /validate-answer/ - question_id: {request.question_id}, is_correct: {is_correct}")
+    logger.info(
+        f"POST /validate-answer/ - question_id: {request.question_id}, is_correct: {is_correct}"
+    )
     return AnswerValidationResponse(
         question_id=db_question.id,
         is_correct=is_correct,
         correct_answer=db_question.correct_answer,
         explanation=db_question.explanation,
         choices=choices,
-        question=db_question.question
+        question=db_question.question,
     )
 
 
-@router.get("/mcq-questions/{document_filename}/{question_index}", response_model=MCQQuestion)
+@router.get(
+    "/mcq-questions/{document_filename}/{question_index}", response_model=MCQQuestion
+)
 async def get_specific_mcq_question(
-    document_filename: str, 
-    question_index: int, 
+    document_filename: str,
+    question_index: int,
     db: Session = Depends(get_db),
-    user: User = Depends(current_active_user)
+    user: User = Depends(current_active_user),
 ):
     """
     Retrieve a specific MCQ question for a document by index.
@@ -432,16 +488,23 @@ async def get_specific_mcq_question(
     Returns:
         A single MCQQuestion object at the specified index
     """
-    logger.info(f"GET /mcq-questions/{document_filename}/{question_index} - user_id: {user.id}")
-    
+    logger.info(
+        f"GET /mcq-questions/{document_filename}/{question_index} - user_id: {user.id}"
+    )
+
     # Get the document from the database based on the filename and user
     db_document = (
         db.query(StudyDocument)
-        .filter(StudyDocument.filename == document_filename, StudyDocument.user_id == user.id)
+        .filter(
+            StudyDocument.filename == document_filename,
+            StudyDocument.user_id == user.id,
+        )
         .first()
     )
     if not db_document:
-        logger.warning(f"GET /mcq-questions/{document_filename}/{question_index} - Document not found for user_id: {user.id}")
+        logger.warning(
+            f"GET /mcq-questions/{document_filename}/{question_index} - Document not found for user_id: {user.id}"
+        )
         raise FileValidationException(
             f"Document not found or access denied: {document_filename}"
         )
@@ -456,7 +519,9 @@ async def get_specific_mcq_question(
 
     # Check if the index is valid
     if question_index < 0 or question_index >= len(db_questions):
-        logger.warning(f"GET /mcq-questions/{document_filename}/{question_index} - Index out of range (total: {len(db_questions)})")
+        logger.warning(
+            f"GET /mcq-questions/{document_filename}/{question_index} - Index out of range (total: {len(db_questions)})"
+        )
         raise FileValidationException(
             f"Question index {question_index} is out of range. Available range: 0 to {len(db_questions) - 1}"
         )
@@ -470,11 +535,12 @@ async def get_specific_mcq_question(
     try:
         choices_json = json.loads(db_question.choices.replace("'", '"'))
         choices = [
-            MCQChoice(id=choice["id"], text=choice["text"])
-            for choice in choices_json
+            MCQChoice(id=choice["id"], text=choice["text"]) for choice in choices_json
         ]
     except Exception as e:
-        logger.warning(f"GET /mcq-questions/{document_filename}/{question_index} - Error parsing choices JSON: {str(e)}")
+        logger.warning(
+            f"GET /mcq-questions/{document_filename}/{question_index} - Error parsing choices JSON: {str(e)}"
+        )
         # If parsing fails, create empty choices
         choices = []
 
@@ -485,18 +551,20 @@ async def get_specific_mcq_question(
         choices=choices,
         correct_answer=db_question.correct_answer,
         explanation=db_question.explanation,
-        page_number=db_question.page_number
+        page_number=db_question.page_number,
     )
-    
-    logger.info(f"GET /mcq-questions/{document_filename}/{question_index} - Returning question_id: {db_question.id}")
+
+    logger.info(
+        f"GET /mcq-questions/{document_filename}/{question_index} - Returning question_id: {db_question.id}"
+    )
     return question
 
 
 @router.get("/mcq-question-count/{document_filename}", response_model=int)
 async def get_mcq_question_count(
-    document_filename: str, 
+    document_filename: str,
     db: Session = Depends(get_db),
-    user: User = Depends(current_active_user)
+    user: User = Depends(current_active_user),
 ):
     """
     Retrieve the total count of MCQ questions for a specific document.
@@ -509,15 +577,20 @@ async def get_mcq_question_count(
         The total number of questions for the specified document
     """
     logger.info(f"GET /mcq-question-count/{document_filename} - user_id: {user.id}")
-    
+
     # Get the document from the database based on the filename and user
     db_document = (
         db.query(StudyDocument)
-        .filter(StudyDocument.filename == document_filename, StudyDocument.user_id == user.id)
+        .filter(
+            StudyDocument.filename == document_filename,
+            StudyDocument.user_id == user.id,
+        )
         .first()
     )
     if not db_document:
-        logger.warning(f"GET /mcq-question-count/{document_filename} - Document not found for user_id: {user.id}")
+        logger.warning(
+            f"GET /mcq-question-count/{document_filename} - Document not found for user_id: {user.id}"
+        )
         raise FileValidationException(
             f"Document not found or access denied: {document_filename}"
         )
@@ -529,23 +602,26 @@ async def get_mcq_question_count(
         .count()
     )
 
-    logger.info(f"GET /mcq-question-count/{document_filename} - count: {question_count}")
+    logger.info(
+        f"GET /mcq-question-count/{document_filename} - count: {question_count}"
+    )
     return question_count
 
 
 from fastapi.responses import FileResponse
 
+
 @router.get("/files/{filename}")
 async def get_file(
-    filename: str, 
+    filename: str,
     user: User = Depends(current_active_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Serve uploaded files securely, ensuring the user owns the file.
     """
     logger.info(f"GET /files/{filename} - user_id: {user.id}")
-    
+
     # Verify ownership
     db_document = (
         db.query(StudyDocument)
@@ -553,33 +629,34 @@ async def get_file(
         .first()
     )
     if not db_document:
-        logger.warning(f"GET /files/{filename} - File not found or access denied for user_id: {user.id}")
+        logger.warning(
+            f"GET /files/{filename} - File not found or access denied for user_id: {user.id}"
+        )
         raise FileValidationException("File not found or access denied")
-    
+
     file_path = os.path.join(UPLOAD_DIRECTORY, filename)
     if not os.path.exists(file_path):
         logger.error(f"GET /files/{filename} - File not found on disk: {file_path}")
         raise FileValidationException("File not found on disk")
-    
+
     logger.info(f"GET /files/{filename} - Serving file for user_id: {user.id}")
     return FileResponse(file_path)
 
 
 @router.get("/documents", response_model=List[dict])
 async def get_documents(
-    db: Session = Depends(get_db),
-    user: User = Depends(current_active_user)
+    db: Session = Depends(get_db), user: User = Depends(current_active_user)
 ):
     """
     Get all documents uploaded by the current user.
-    
+
     Returns a list of documents with their metadata including
     question count and flashcard count.
     """
     logger.info(f"GET /documents - user_id: {user.id}")
-    
+
     from app.database.models import Flashcard
-    
+
     # Get all documents for this user
     documents = (
         db.query(StudyDocument)
@@ -587,53 +664,55 @@ async def get_documents(
         .order_by(StudyDocument.created_at.desc())
         .all()
     )
-    
+
     result = []
     for doc in documents:
         # Count questions for this document
         questions_count = (
-            db.query(DBMCQQuestion)
-            .filter(DBMCQQuestion.document_id == doc.id)
-            .count()
+            db.query(DBMCQQuestion).filter(DBMCQQuestion.document_id == doc.id).count()
         )
-        
+
         # Count flashcards for this document
         flashcards_count = (
-            db.query(Flashcard)
-            .filter(Flashcard.document_id == doc.id)
-            .count()
+            db.query(Flashcard).filter(Flashcard.document_id == doc.id).count()
         )
-        
-        result.append({
-            "id": doc.id,
-            "filename": doc.filename,
-            "created_at": doc.created_at.isoformat() if doc.created_at else None,
-            "summary": doc.summary,
-            "key_concepts": doc.key_concepts,
-            "questions_count": questions_count,
-            "flashcards_count": flashcards_count
-        })
-    
-    logger.info(f"GET /documents - Returning {len(result)} documents for user_id: {user.id}")
+
+        result.append(
+            {
+                "id": doc.id,
+                "filename": doc.filename,
+                "created_at": doc.created_at.isoformat() if doc.created_at else None,
+                "summary": doc.summary,
+                "key_concepts": doc.key_concepts,
+                "questions_count": questions_count,
+                "flashcards_count": flashcards_count,
+            }
+        )
+
+    logger.info(
+        f"GET /documents - Returning {len(result)} documents for user_id: {user.id}"
+    )
     return result
 
 
-@router.post("/generate-flashcards/{filename}", response_model=FlashcardGenerationResponse)
+@router.post(
+    "/generate-flashcards/{filename}", response_model=FlashcardGenerationResponse
+)
 async def generate_flashcards(
     filename: str,
     db: Session = Depends(get_db),
-    user: User = Depends(current_active_user)
+    user: User = Depends(current_active_user),
 ):
     """
     Generate flashcards from a document.
-    
+
     If flashcards already exist for this document, returns the existing ones.
     Otherwise, generates new flashcards using AI and stores them in the database.
     """
     logger.info(f"POST /generate-flashcards/{filename} - user_id: {user.id}")
-    
+
     from app.database.models import Flashcard
-    
+
     # Get the document from the database
     db_document = (
         db.query(StudyDocument)
@@ -641,57 +720,71 @@ async def generate_flashcards(
         .first()
     )
     if not db_document:
-        logger.warning(f"POST /generate-flashcards/{filename} - Document not found for user_id: {user.id}")
-        raise FileValidationException(f"Document not found or access denied: {filename}")
-    
+        logger.warning(
+            f"POST /generate-flashcards/{filename} - Document not found for user_id: {user.id}"
+        )
+        raise FileValidationException(
+            f"Document not found or access denied: {filename}"
+        )
+
     # Check if flashcards already exist for this document
     existing_flashcards = (
-        db.query(Flashcard)
-        .filter(Flashcard.document_id == db_document.id)
-        .all()
+        db.query(Flashcard).filter(Flashcard.document_id == db_document.id).all()
     )
-    
+
     if existing_flashcards:
-        logger.info(f"POST /generate-flashcards/{filename} - Returning {len(existing_flashcards)} cached flashcards")
+        logger.info(
+            f"POST /generate-flashcards/{filename} - Returning {len(existing_flashcards)} cached flashcards"
+        )
         # Return existing flashcards
         flashcard_responses = [
             FlashcardResponse(
                 id=card.id,
                 front=card.front,
                 back=card.back,
-                explanation=card.explanation or ""
+                explanation=card.explanation or "",
             )
             for card in existing_flashcards
         ]
         return FlashcardGenerationResponse(
             filename=filename,
             flashcards=flashcard_responses,
-            message="Flashcards retrieved from cache"
+            message="Flashcards retrieved from cache",
         )
-    
+
     # Generate new flashcards
     file_location = os.path.join(UPLOAD_DIRECTORY, filename)
-    
+
     if not os.path.exists(file_location):
         logger.error(f"POST /generate-flashcards/{filename} - File not found on disk")
         raise FileValidationException(f"File not found on disk: {filename}")
-    
+
     try:
         # Extract text from the file
         pages_text = extract_text_from_file(file_location)
-        
+
         if not pages_text:
-            logger.warning(f"POST /generate-flashcards/{filename} - No text extracted from document")
+            logger.warning(
+                f"POST /generate-flashcards/{filename} - No text extracted from document"
+            )
             raise LLMProcessingException("No text could be extracted from the document")
-        
-        logger.info(f"POST /generate-flashcards/{filename} - Generating flashcards from {len(pages_text)} pages")
+
+        logger.info(
+            f"POST /generate-flashcards/{filename} - Generating flashcards from {len(pages_text)} pages"
+        )
         # Generate flashcards using AI
-        generated_flashcards = await generate_flashcards_from_pages(pages_text, num_cards_per_page=5)
-        
+        generated_flashcards = await generate_flashcards_from_pages(
+            pages_text, num_cards_per_page=5
+        )
+
         if not generated_flashcards:
-            logger.warning(f"POST /generate-flashcards/{filename} - AI could not generate flashcards")
-            raise LLMProcessingException("Could not generate flashcards from the document")
-        
+            logger.warning(
+                f"POST /generate-flashcards/{filename} - AI could not generate flashcards"
+            )
+            raise LLMProcessingException(
+                "Could not generate flashcards from the document"
+            )
+
         # Store flashcards in database
         flashcard_responses = []
         for idx, card_data in enumerate(generated_flashcards):
@@ -699,29 +792,31 @@ async def generate_flashcards(
                 document_id=db_document.id,
                 front=card_data["front"],
                 back=card_data["back"],
-                explanation=card_data.get("explanation", "")
+                explanation=card_data.get("explanation", ""),
             )
             db.add(db_flashcard)
             db.flush()  # Get the ID
-            
+
             flashcard_responses.append(
                 FlashcardResponse(
                     id=db_flashcard.id,
                     front=db_flashcard.front,
                     back=db_flashcard.back,
-                    explanation=db_flashcard.explanation or ""
+                    explanation=db_flashcard.explanation or "",
                 )
             )
-        
+
         db.commit()
-        
-        logger.info(f"POST /generate-flashcards/{filename} - Generated {len(flashcard_responses)} flashcards successfully")
+
+        logger.info(
+            f"POST /generate-flashcards/{filename} - Generated {len(flashcard_responses)} flashcards successfully"
+        )
         return FlashcardGenerationResponse(
             filename=filename,
             flashcards=flashcard_responses,
-            message=f"Generated {len(flashcard_responses)} flashcards successfully"
+            message=f"Generated {len(flashcard_responses)} flashcards successfully",
         )
-        
+
     except Exception as e:
         db.rollback()
         logger.error(f"POST /generate-flashcards/{filename} - Error: {str(e)}")

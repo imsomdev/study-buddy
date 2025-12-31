@@ -11,8 +11,7 @@ load_dotenv()
 
 # Database URL
 DATABASE_URL = os.getenv(
-    "DATABASE_URL", 
-    "postgresql+psycopg://user:password@localhost:5432/studybuddy"
+    "DATABASE_URL", "postgresql+psycopg://user:password@localhost:5432/studybuddy"
 )
 
 # Ensure postgresql URLs use psycopg (v3) which supports both sync and async
@@ -27,24 +26,30 @@ if DATABASE_URL.startswith("sqlite"):
 try:
     # Create the SQLAlchemy sync engine
     engine = create_engine(DATABASE_URL)
-    
+
     # Create the SQLAlchemy async engine
     async_engine = create_async_engine(ASYNC_DATABASE_URL)
-    
+
     logging.info("Database engines created successfully")
 except Exception as e:
-    logging.warning(f"Failed to connect to primary DB: {e}. Falling back to SQLite for development.")
+    logging.warning(
+        f"Failed to connect to primary DB: {e}. Falling back to SQLite for development."
+    )
     # Fallback to SQLite for development
     DATABASE_URL = "sqlite:///./studybuddy.db"
     ASYNC_DATABASE_URL = "sqlite+aiosqlite:///./studybuddy.db"
-    
+
     engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-    async_engine = create_async_engine(ASYNC_DATABASE_URL, connect_args={"check_same_thread": False})
+    async_engine = create_async_engine(
+        ASYNC_DATABASE_URL, connect_args={"check_same_thread": False}
+    )
     logging.info("Using SQLite database for development")
 
 # Create session factories
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-AsyncSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=async_engine, class_=AsyncSession)
+AsyncSessionLocal = async_sessionmaker(
+    autocommit=False, autoflush=False, bind=async_engine, class_=AsyncSession
+)
 
 # Create a Base class for declarative models
 Base = declarative_base()
@@ -59,6 +64,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 async def get_async_db():
     """

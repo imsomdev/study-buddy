@@ -191,11 +191,13 @@ async def generate_flashcards_from_pages(
             flashcards = parsed_response.get("flashcards", [])
 
             for card in flashcards:
-                all_flashcards.append({
-                    "front": card.get("front", ""),
-                    "back": card.get("back", ""),
-                    "explanation": card.get("explanation", "")
-                })
+                all_flashcards.append(
+                    {
+                        "front": card.get("front", ""),
+                        "back": card.get("back", ""),
+                        "explanation": card.get("explanation", ""),
+                    }
+                )
 
         except json.JSONDecodeError:
             print(f"Error: Could not parse JSON response for page {page_idx}")

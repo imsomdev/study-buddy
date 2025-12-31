@@ -46,7 +46,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                     "request_id": request_id,
                     "method": request.method,
                     "endpoint": str(request.url.path),
-                    "process_time_ms": round(process_time * 1000, 2)
-                }
+                    "process_time_ms": round(process_time * 1000, 2),
+                },
             )
             raise

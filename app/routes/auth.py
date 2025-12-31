@@ -35,7 +35,7 @@ async def signup(user_data: SignupRequest, db: Session = Depends(get_db)):
     Register a new user
     """
     logger.info(f"POST /signup - Attempting signup for email: {user_data.email}")
-    
+
     # Check if user already exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
@@ -60,7 +60,9 @@ async def signup(user_data: SignupRequest, db: Session = Depends(get_db)):
     # Create access token
     access_token = create_access_token(data={"sub": str(new_user.id)})
 
-    logger.info(f"POST /signup - Successfully registered user: {new_user.email} (id: {new_user.id})")
+    logger.info(
+        f"POST /signup - Successfully registered user: {new_user.email} (id: {new_user.id})"
+    )
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
@@ -74,12 +76,14 @@ async def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     Authenticate a user and return a JWT token
     """
     logger.info(f"POST /login - Login attempt for email: {credentials.email}")
-    
+
     # Find user by email
     user = db.query(User).filter(User.email == credentials.email).first()
 
     if not user or not verify_password(credentials.password, user.hashed_password):
-        logger.warning(f"POST /login - Failed login attempt for email: {credentials.email}")
+        logger.warning(
+            f"POST /login - Failed login attempt for email: {credentials.email}"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -87,7 +91,9 @@ async def login(credentials: LoginRequest, db: Session = Depends(get_db)):
         )
 
     if not user.is_active:
-        logger.warning(f"POST /login - Inactive account login attempt: {credentials.email}")
+        logger.warning(
+            f"POST /login - Inactive account login attempt: {credentials.email}"
+        )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Account is inactive"
         )
@@ -95,7 +101,9 @@ async def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     # Create access token
     access_token = create_access_token(data={"sub": str(user.id)})
 
-    logger.info(f"POST /login - Successful login for user: {user.email} (id: {user.id})")
+    logger.info(
+        f"POST /login - Successful login for user: {user.email} (id: {user.id})"
+    )
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
@@ -119,13 +127,17 @@ async def request_password_reset(
     """
     Request a password reset token (sent via email in production)
     """
-    logger.info(f"POST /password-reset/request - Reset requested for email: {request.email}")
-    
+    logger.info(
+        f"POST /password-reset/request - Reset requested for email: {request.email}"
+    )
+
     user = db.query(User).filter(User.email == request.email).first()
 
     # Always return success to prevent email enumeration
     if not user:
-        logger.info(f"POST /password-reset/request - Email not found (not disclosed): {request.email}")
+        logger.info(
+            f"POST /password-reset/request - Email not found (not disclosed): {request.email}"
+        )
         return MessageResponse(
             message="If the email exists, a reset link has been sent"
         )
@@ -139,7 +151,9 @@ async def request_password_reset(
 
     db.commit()
 
-    logger.info(f"POST /password-reset/request - Reset token generated for user_id: {user.id}")
+    logger.info(
+        f"POST /password-reset/request - Reset token generated for user_id: {user.id}"
+    )
     # TODO: In production, send email with reset link containing the token
     # For now, return the token in the response (ONLY FOR DEVELOPMENT)
     # In production, remove the token from response and send it via email
@@ -156,7 +170,7 @@ async def confirm_password_reset(
     Reset password using the reset token
     """
     logger.info("POST /password-reset/confirm - Password reset confirmation attempt")
-    
+
     user = db.query(User).filter(User.reset_token == reset_data.token).first()
 
     if not user:
@@ -168,7 +182,9 @@ async def confirm_password_reset(
 
     # Check if token is expired
     if user.reset_token_expires < datetime.now(timezone.utc):
-        logger.warning(f"POST /password-reset/confirm - Expired token for user_id: {user.id}")
+        logger.warning(
+            f"POST /password-reset/confirm - Expired token for user_id: {user.id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Reset token has expired"
         )
@@ -180,7 +196,9 @@ async def confirm_password_reset(
 
     db.commit()
 
-    logger.info(f"POST /password-reset/confirm - Password reset successful for user_id: {user.id}")
+    logger.info(
+        f"POST /password-reset/confirm - Password reset successful for user_id: {user.id}"
+    )
     return MessageResponse(message="Password has been reset successfully")
 
 
@@ -193,13 +211,17 @@ async def change_password(
     """
     Change password for authenticated user
     """
-    logger.info(f"POST /password/change - Password change attempt for user_id: {current_user.id}")
-    
+    logger.info(
+        f"POST /password/change - Password change attempt for user_id: {current_user.id}"
+    )
+
     # Verify current password
     if not verify_password(
         password_data.current_password, current_user.hashed_password
     ):
-        logger.warning(f"POST /password/change - Incorrect current password for user_id: {current_user.id}")
+        logger.warning(
+            f"POST /password/change - Incorrect current password for user_id: {current_user.id}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Current password is incorrect",
@@ -209,5 +231,7 @@ async def change_password(
     current_user.hashed_password = hash_password(password_data.new_password)
     db.commit()
 
-    logger.info(f"POST /password/change - Password changed successfully for user_id: {current_user.id}")
+    logger.info(
+        f"POST /password/change - Password changed successfully for user_id: {current_user.id}"
+    )
     return MessageResponse(message="Password changed successfully")

@@ -12,6 +12,7 @@ load_dotenv()
 
 SECRET = os.getenv("JWT_SECRET", "SECRET_KEY_CHANGEME")
 
+
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
