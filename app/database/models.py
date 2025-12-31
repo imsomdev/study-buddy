@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, ForeignKey
-from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
 from app.database.config import Base
 
 

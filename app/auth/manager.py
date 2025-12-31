@@ -1,12 +1,12 @@
 import os
 from typing import Optional
 
+from dotenv import load_dotenv
 from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, IntegerIDMixin
-from dotenv import load_dotenv
 
-from app.database.models import User
 from app.auth.database import get_user_db
+from app.database.models import User
 
 load_dotenv()
 

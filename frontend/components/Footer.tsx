@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  
+
   const footerLinks = {
     product: [
       { name: 'Features', href: '#features' },
@@ -33,15 +33,16 @@ const Footer = () => {
               Study Buddy
             </Link>
             <p className="text-sm text-white/50 leading-relaxed">
-              Transform your study materials into interactive practice tests with AI.
+              Transform your study materials into interactive practice tests
+              with AI.
             </p>
           </div>
-          
+
           {/* Product Links */}
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">Product</h4>
             <ul className="space-y-3">
-              {footerLinks.product.map((link) => (
+              {footerLinks.product.map(link => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
@@ -53,12 +54,12 @@ const Footer = () => {
               ))}
             </ul>
           </div>
-          
+
           {/* Support Links */}
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">Support</h4>
             <ul className="space-y-3">
-              {footerLinks.support.map((link) => (
+              {footerLinks.support.map(link => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
@@ -70,12 +71,12 @@ const Footer = () => {
               ))}
             </ul>
           </div>
-          
+
           {/* Legal Links */}
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">Legal</h4>
             <ul className="space-y-3">
-              {footerLinks.legal.map((link) => (
+              {footerLinks.legal.map(link => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
@@ -88,14 +89,16 @@ const Footer = () => {
             </ul>
           </div>
         </div>
-        
+
         {/* Bottom Section */}
         <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-white/40">
             © {currentYear} Study Buddy. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
-            <span className="text-sm text-white/40">Made with ❤️ for students</span>
+            <span className="text-sm text-white/40">
+              Made with ❤️ for students
+            </span>
           </div>
         </div>
       </div>

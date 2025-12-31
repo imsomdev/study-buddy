@@ -5,10 +5,10 @@ from typing import List
 
 from cerebras.cloud.sdk import AsyncCerebras
 
-from app.schemas.study import MCQChoice, MCQQuestion
-
 # Load environment variables from .env file
 from dotenv import load_dotenv
+
+from app.schemas.study import MCQChoice, MCQQuestion
 
 load_dotenv()
 
@@ -40,10 +40,10 @@ async def generate_mcq_questions_from_pages(
 
         # Construct the prompt for the OpenAI API
         prompt = f"""
-        You are an educational expert. Based on the following text content, generate {num_questions_per_page} multiple choice questions (MCQs) with 4 options each. 
+        You are an educational expert. Based on the following text content, generate {num_questions_per_page} multiple choice questions (MCQs) with 4 options each.
         Make sure the questions are relevant to the content and have one correct answer.
         The output should be in JSON format as follows:
-        
+
         {{
             "questions": [
                 {{
@@ -60,7 +60,7 @@ async def generate_mcq_questions_from_pages(
                 }}
             ]
         }}
-        
+
         Here is the text content:
         {page_text[:4000]}  # Limiting to 4000 characters to avoid exceeding token limits
         """
@@ -149,11 +149,11 @@ async def generate_flashcards_from_pages(
         - A question or term on the front
         - The answer or definition on the back
         - A brief explanation for better understanding
-        
+
         Focus on key concepts, definitions, and important facts from the text.
-        
+
         The output should be in JSON format as follows:
-        
+
         {{
             "flashcards": [
                 {{
@@ -163,7 +163,7 @@ async def generate_flashcards_from_pages(
                 }}
             ]
         }}
-        
+
         Here is the text content:
         {page_text[:4000]}
         """

@@ -1,6 +1,6 @@
 # Database package initialization
-from .config import engine, Base, get_db
 from . import models
+from .config import Base, engine, get_db
 
 
 def create_tables():

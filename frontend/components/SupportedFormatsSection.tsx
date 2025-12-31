@@ -35,7 +35,8 @@ const SupportedFormatsSection = () => {
             Supported Document Formats
           </h2>
           <p className="text-base sm:text-lg text-white/70 max-w-2xl mx-auto">
-            Upload your study materials in any of these popular formats. We're constantly adding more!
+            Upload your study materials in any of these popular formats. We're
+            constantly adding more!
           </p>
         </div>
 

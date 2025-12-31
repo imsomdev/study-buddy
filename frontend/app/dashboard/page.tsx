@@ -5,15 +5,15 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { API_ENDPOINTS } from '@/lib/api';
-import { 
-  FileText, 
-  Brain, 
-  Zap, 
-  Clock, 
-  BookOpen, 
+import {
+  FileText,
+  Brain,
+  Zap,
+  Clock,
+  BookOpen,
   TrendingUp,
   Award,
-  Upload
+  Upload,
 } from 'lucide-react';
 
 type Document = {
@@ -39,7 +39,9 @@ export default function DashboardPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [stats, setStats] = useState<ProgressStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedSummaryDoc, setSelectedSummaryDoc] = useState<Document | null>(null);
+  const [selectedSummaryDoc, setSelectedSummaryDoc] = useState<Document | null>(
+    null
+  );
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -52,11 +54,11 @@ export default function DashboardPage() {
       try {
         const [docsRes, statsRes] = await Promise.all([
           fetch(API_ENDPOINTS.documents, {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
           }),
           fetch(API_ENDPOINTS.progressStats, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          })
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
 
         if (docsRes.ok) {
@@ -83,13 +85,16 @@ export default function DashboardPage() {
 
   const handlePractice = (doc: Document) => {
     // Store document info in session storage for questions page
-    sessionStorage.setItem('generatedQuestions', JSON.stringify({
+    sessionStorage.setItem(
+      'generatedQuestions',
+      JSON.stringify({
         filename: doc.filename,
         documentId: doc.id,
         page_count: 0,
         questions: [],
-        message: "Continuing study session"
-    }));
+        message: 'Continuing study session',
+      })
+    );
     router.push('/questions');
   };
 
@@ -99,7 +104,7 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-     return (
+    return (
       <div className="min-h-dvh flex flex-col relative overflow-hidden">
         {/* Teal gradient background */}
         <div className="fixed inset-0 -z-10">
@@ -128,14 +133,17 @@ export default function DashboardPage() {
       </div>
 
       <Navbar />
-      
+
       <main className="flex-grow pt-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         {/* Header */}
         <header className="mb-10">
           <h1 className="text-3xl font-bold text-white mb-2">
             Start Your Learning Session
           </h1>
-          <p className="text-white/70">Track your progress and enhance your knowledge with AI-driven insights.</p>
+          <p className="text-white/70">
+            Track your progress and enhance your knowledge with AI-driven
+            insights.
+          </p>
         </header>
 
         {/* Stats Overview */}
@@ -163,7 +171,9 @@ export default function DashboardPage() {
               </div>
               <h3 className="font-semibold">Questions Attempted</h3>
             </div>
-            <p className="text-3xl font-bold text-white">{stats?.total_questions_attempted || 0}</p>
+            <p className="text-3xl font-bold text-white">
+              {stats?.total_questions_attempted || 0}
+            </p>
           </div>
 
           <div className="glass-panel p-6 relative overflow-hidden group">
@@ -176,18 +186,23 @@ export default function DashboardPage() {
               </div>
               <h3 className="font-semibold">Accuracy Rate</h3>
             </div>
-            <p className="text-3xl font-bold text-white">{stats?.overall_accuracy || 0}%</p>
+            <p className="text-3xl font-bold text-white">
+              {stats?.overall_accuracy || 0}%
+            </p>
           </div>
         </div>
 
         {/* Documents List */}
         <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-          <Clock size={20} className="text-white/70"/> Recent Documents
+          <Clock size={20} className="text-white/70" /> Recent Documents
         </h2>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {documents.map((doc) => (
-            <div key={doc.id} className="glass-panel p-5 hover:scale-[1.02] transition-all group">
+          {documents.map(doc => (
+            <div
+              key={doc.id}
+              className="glass-panel p-5 hover:scale-[1.02] transition-all group"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-white/10 rounded-lg text-white group-hover:scale-105 transition-transform">
                   <FileText size={24} />
@@ -198,11 +213,14 @@ export default function DashboardPage() {
                   </span>
                 )}
               </div>
-              
-              <h3 className="font-semibold text-lg text-white mb-2 truncate" title={doc.filename}>
+
+              <h3
+                className="font-semibold text-lg text-white mb-2 truncate"
+                title={doc.filename}
+              >
                 {doc.filename}
               </h3>
-              
+
               <div className="flex gap-2 mb-4 text-xs text-white/60">
                 <span className="bg-white/10 px-2 py-1 rounded-md">
                   {doc.questions_count} Questions
@@ -211,28 +229,29 @@ export default function DashboardPage() {
                   {doc.flashcards_count} Flashcards
                 </span>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2 mt-4">
-                <button 
+                <button
                   onClick={() => handleViewSummary(doc)}
                   disabled={!doc.summary}
                   className={`px-3 py-2 text-sm font-medium rounded-lg flex items-center justify-center gap-2 transition-all ${
-                    doc.summary 
-                    ? 'glass-btn hover:bg-white/20'
-                    : 'bg-white/5 text-white/40 cursor-not-allowed'
+                    doc.summary
+                      ? 'glass-btn hover:bg-white/20'
+                      : 'bg-white/5 text-white/40 cursor-not-allowed'
                   }`}
                 >
-                  <Brain size={16} /> {doc.summary ? 'View Summary' : 'No Summary'}
+                  <Brain size={16} />{' '}
+                  {doc.summary ? 'View Summary' : 'No Summary'}
                 </button>
 
-                <button 
+                <button
                   onClick={() => handlePractice(doc)}
                   className="px-3 py-2 text-sm font-medium rounded-lg glass-btn hover:bg-white/20 flex items-center justify-center gap-2 transition-all"
                 >
                   <Zap size={16} /> Practice
                 </button>
-                
-                <button 
+
+                <button
                   onClick={() => handleFlashcards(doc)}
                   className="col-span-2 mt-2 px-3 py-2 text-sm font-medium rounded-lg btn-primary flex items-center justify-center gap-2 transition-all"
                 >
@@ -242,12 +261,14 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
-        
+
         {documents.length === 0 && (
           <div className="text-center py-20 glass-panel">
             <Upload size={48} className="mx-auto text-white/40 mb-4" />
-            <p className="text-white/70 mb-4">You haven't uploaded any documents yet.</p>
-            <button 
+            <p className="text-white/70 mb-4">
+              You haven't uploaded any documents yet.
+            </p>
+            <button
               onClick={() => router.push('/')}
               className="px-6 py-3 btn-primary font-bold transition-all"
             >
@@ -262,20 +283,25 @@ export default function DashboardPage() {
             <div className="glass-panel w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
               <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Brain className="text-cyan-300" /> 
-                  AI Analysis: <span className="text-white/60 font-normal text-base truncate max-w-[200px]">{selectedSummaryDoc.filename}</span>
+                  <Brain className="text-cyan-300" />
+                  AI Analysis:{' '}
+                  <span className="text-white/60 font-normal text-base truncate max-w-[200px]">
+                    {selectedSummaryDoc.filename}
+                  </span>
                 </h2>
-                <button 
+                <button
                   onClick={() => setSelectedSummaryDoc(null)}
                   className="text-white/60 hover:text-white transition-colors text-2xl"
                 >
                   ✕
                 </button>
               </div>
-              
+
               <div className="p-6 overflow-y-auto">
                 <div className="mb-6">
-                  <h3 className="text-sm uppercase tracking-widest text-white/50 font-bold mb-3">Summary</h3>
+                  <h3 className="text-sm uppercase tracking-widest text-white/50 font-bold mb-3">
+                    Summary
+                  </h3>
                   <p className="text-white/90 leading-relaxed whitespace-pre-wrap">
                     {selectedSummaryDoc.summary}
                   </p>
@@ -283,20 +309,27 @@ export default function DashboardPage() {
 
                 {selectedSummaryDoc.key_concepts && (
                   <div>
-                    <h3 className="text-sm uppercase tracking-widest text-white/50 font-bold mb-3">Key Concepts</h3>
+                    <h3 className="text-sm uppercase tracking-widest text-white/50 font-bold mb-3">
+                      Key Concepts
+                    </h3>
                     <div className="flex flex-wrap gap-2">
-                      {JSON.parse(selectedSummaryDoc.key_concepts).map((concept: string, i: number) => (
-                        <span key={i} className="px-3 py-1 bg-white/10 border border-white/20 text-white/90 rounded-full text-sm">
-                          {concept}
-                        </span>
-                      ))}
+                      {JSON.parse(selectedSummaryDoc.key_concepts).map(
+                        (concept: string, i: number) => (
+                          <span
+                            key={i}
+                            className="px-3 py-1 bg-white/10 border border-white/20 text-white/90 rounded-full text-sm"
+                          >
+                            {concept}
+                          </span>
+                        )
+                      )}
                     </div>
                   </div>
                 )}
               </div>
 
               <div className="p-4 border-t border-white/10 bg-white/5 flex justify-end">
-                <button 
+                <button
                   onClick={() => setSelectedSummaryDoc(null)}
                   className="px-4 py-2 glass-btn hover:bg-white/20 text-white rounded-lg transition-colors"
                 >
@@ -307,7 +340,7 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
-      
+
       <Footer />
     </div>
   );

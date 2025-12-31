@@ -10,7 +10,8 @@ const Navbar = () => {
 
   // Check authentication on mount
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token =
+      typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     setIsAuthenticated(!!token);
   }, []);
 

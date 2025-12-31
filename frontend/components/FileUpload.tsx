@@ -1,12 +1,22 @@
-"use client";
+'use client';
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { API_BASE_URL, API_ENDPOINTS } from "../lib/api";
-import { Upload, FileText, Eye, Sparkles, X, Check, Loader2, Image, Lock } from "lucide-react";
-import Link from "next/link";
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { API_BASE_URL, API_ENDPOINTS } from '../lib/api';
+import {
+  Upload,
+  FileText,
+  Eye,
+  Sparkles,
+  X,
+  Check,
+  Loader2,
+  Image,
+  Lock,
+} from 'lucide-react';
+import Link from 'next/link';
 
-type FileType = "pdf" | "docx" | "txt" | null;
+type FileType = 'pdf' | 'docx' | 'txt' | null;
 
 type Choice = {
   id: string;
@@ -39,27 +49,27 @@ const FileUpload = () => {
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [notification, setNotification] = useState<{
-    type: "success" | "error";
+    type: 'success' | 'error';
     message: string;
   } | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem('token');
     setIsAuthenticated(!!token);
   }, []);
 
   const validateFile = (file: File): boolean => {
     const validTypes = [
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "text/plain",
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
     ];
-    const validExtensions = [".pdf", ".docx", ".txt"];
+    const validExtensions = ['.pdf', '.docx', '.txt'];
 
     const fileTypeValid = validTypes.includes(file.type);
-    const fileExtensionValid = validExtensions.some((ext) =>
+    const fileExtensionValid = validExtensions.some(ext =>
       file.name.toLowerCase().endsWith(ext)
     );
 
@@ -78,8 +88,8 @@ const FileUpload = () => {
         detectFileType(droppedFile);
       } else {
         setNotification({
-          type: "error",
-          message: "Please upload a PDF, DOCX, or TXT file.",
+          type: 'error',
+          message: 'Please upload a PDF, DOCX, or TXT file.',
         });
       }
     }
@@ -87,9 +97,9 @@ const FileUpload = () => {
 
   const handleDrag = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    if (e.type === "dragenter" || e.type === "dragover") {
+    if (e.type === 'dragenter' || e.type === 'dragover') {
       setIsDragActive(true);
-    } else if (e.type === "dragleave") {
+    } else if (e.type === 'dragleave') {
       setIsDragActive(false);
     }
   }, []);
@@ -103,8 +113,8 @@ const FileUpload = () => {
         detectFileType(selectedFile);
       } else {
         setNotification({
-          type: "error",
-          message: "Please upload a PDF, DOCX, or TXT file.",
+          type: 'error',
+          message: 'Please upload a PDF, DOCX, or TXT file.',
         });
       }
     }
@@ -112,12 +122,12 @@ const FileUpload = () => {
 
   const detectFileType = (file: File) => {
     const fileName = file.name.toLowerCase();
-    if (fileName.endsWith(".pdf")) {
-      setFileType("pdf");
-    } else if (fileName.endsWith(".docx")) {
-      setFileType("docx");
-    } else if (fileName.endsWith(".txt")) {
-      setFileType("txt");
+    if (fileName.endsWith('.pdf')) {
+      setFileType('pdf');
+    } else if (fileName.endsWith('.docx')) {
+      setFileType('docx');
+    } else if (fileName.endsWith('.txt')) {
+      setFileType('txt');
     } else {
       setFileType(null);
     }
@@ -137,7 +147,7 @@ const FileUpload = () => {
     setIsUploadComplete(false);
     setIsGeneratingQuestions(false);
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
@@ -145,7 +155,7 @@ const FileUpload = () => {
     if (!file) return;
 
     if (!isAuthenticated) {
-      router.push("/login");
+      router.push('/login');
       return;
     }
 
@@ -153,7 +163,7 @@ const FileUpload = () => {
     setUploadProgress(0);
 
     const progressInterval = setInterval(() => {
-      setUploadProgress((prev) => {
+      setUploadProgress(prev => {
         if (prev >= 95) {
           clearInterval(progressInterval);
           return 95;
@@ -164,14 +174,15 @@ const FileUpload = () => {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append('file', file);
 
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token =
+        typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
       const response = await fetch(API_ENDPOINTS.uploadFile, {
-        method: "POST",
+        method: 'POST',
         headers: headers,
         body: formData,
       });
@@ -181,9 +192,9 @@ const FileUpload = () => {
 
       if (response.ok) {
         const result = await response.json();
-        console.log("Upload successful:", result);
+        console.log('Upload successful:', result);
         setNotification({
-          type: "success",
+          type: 'success',
           message: `${file.name} uploaded successfully!`,
         });
 
@@ -193,18 +204,18 @@ const FileUpload = () => {
         }, 500);
       } else {
         const errorData = await response.json();
-        console.error("Upload failed:", errorData);
+        console.error('Upload failed:', errorData);
         setNotification({
-          type: "error",
-          message: `Upload failed: ${errorData.detail || "Unknown error"}`,
+          type: 'error',
+          message: `Upload failed: ${errorData.detail || 'Unknown error'}`,
         });
         setIsUploading(false);
       }
     } catch (error: any) {
-      console.error("Upload error:", error);
+      console.error('Upload error:', error);
       clearInterval(progressInterval);
       setNotification({
-        type: "error",
+        type: 'error',
         message: `Upload failed with error: ${error.message}`,
       });
       setIsUploading(false);
@@ -214,7 +225,7 @@ const FileUpload = () => {
   const handleViewFile = () => {
     if (file) {
       const fileURL = URL.createObjectURL(file);
-      window.open(fileURL, "_blank");
+      window.open(fileURL, '_blank');
     }
   };
 
@@ -222,7 +233,7 @@ const FileUpload = () => {
     if (!file) return;
 
     if (!isAuthenticated) {
-      router.push("/login");
+      router.push('/login');
       return;
     }
 
@@ -230,29 +241,30 @@ const FileUpload = () => {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append('file', file);
 
-      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const token =
+        typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const authHeader: Record<string, string> = {};
       if (token) authHeader['Authorization'] = `Bearer ${token}`;
 
       const uploadResponse = await fetch(API_ENDPOINTS.uploadFile, {
-        method: "POST",
+        method: 'POST',
         headers: authHeader,
         body: formData,
       });
 
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json();
-        throw new Error(errorData.detail || "Upload failed");
+        throw new Error(errorData.detail || 'Upload failed');
       }
 
       const uploadResult = await uploadResponse.json();
 
       const generateResponse = await fetch(API_ENDPOINTS.generateMcq, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           ...authHeader,
         },
         body: JSON.stringify({
@@ -263,29 +275,29 @@ const FileUpload = () => {
 
       if (!generateResponse.ok) {
         const errorData = await generateResponse.json();
-        throw new Error(errorData.detail || "Question generation failed");
+        throw new Error(errorData.detail || 'Question generation failed');
       }
 
       const result: MCQGenerationResponse = await generateResponse.json();
-      console.log("Questions generated:", result);
+      console.log('Questions generated:', result);
 
-      sessionStorage.removeItem("currentQuestionIndex");
-      sessionStorage.removeItem("selectedChoice");
-      sessionStorage.removeItem("isAnswerSubmitted");
-      sessionStorage.removeItem("isCorrect");
-      sessionStorage.removeItem("validationResult");
+      sessionStorage.removeItem('currentQuestionIndex');
+      sessionStorage.removeItem('selectedChoice');
+      sessionStorage.removeItem('isAnswerSubmitted');
+      sessionStorage.removeItem('isCorrect');
+      sessionStorage.removeItem('validationResult');
 
-      sessionStorage.setItem("generatedQuestions", JSON.stringify(result));
+      sessionStorage.setItem('generatedQuestions', JSON.stringify(result));
       setNotification({
-        type: "success",
+        type: 'success',
         message: `Questions generated successfully from ${result.page_count} pages!`,
       });
 
-      router.push("/questions");
+      router.push('/questions');
     } catch (error: any) {
-      console.error("Question generation error:", error);
+      console.error('Question generation error:', error);
       setNotification({
-        type: "error",
+        type: 'error',
         message: `Failed to generate questions: ${error.message}`,
       });
       setIsGeneratingQuestions(false);
@@ -311,12 +323,12 @@ const FileUpload = () => {
       {notification && (
         <div
           className={`fixed top-4 right-4 sm:top-6 sm:right-6 z-50 px-4 py-3 sm:px-5 sm:py-4 rounded-xl sm:rounded-2xl shadow-2xl text-white max-w-[calc(100vw-2rem)] sm:max-w-sm text-sm sm:text-base ${
-            notification.type === "success" ? "toast-success" : "toast-error"
+            notification.type === 'success' ? 'toast-success' : 'toast-error'
           }`}
         >
           <div className="flex justify-between items-start gap-3">
             <div className="flex items-center gap-2">
-              {notification.type === "success" ? (
+              {notification.type === 'success' ? (
                 <Check className="w-5 h-5" />
               ) : (
                 <X className="w-5 h-5" />
@@ -339,7 +351,7 @@ const FileUpload = () => {
           /* Drop Zone */
           <div
             className={`glass-upload p-6 sm:p-8 md:p-10 text-center cursor-pointer ${
-              isDragActive ? "active" : ""
+              isDragActive ? 'active' : ''
             }`}
             onDrop={handleDrop}
             onDragOver={handleDrag}
@@ -361,15 +373,17 @@ const FileUpload = () => {
               <p className="text-xl sm:text-2xl font-semibold text-white mb-2">
                 Drag your files here
               </p>
-              <p className="text-white/70 mb-4 sm:mb-6 text-sm sm:text-base">or click to browse</p>
-              
+              <p className="text-white/70 mb-4 sm:mb-6 text-sm sm:text-base">
+                or click to browse
+              </p>
+
               <button
                 type="button"
                 className="btn-primary px-6 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base"
               >
                 Browse Files
               </button>
-              
+
               <p className="mt-4 sm:mt-6 text-xs sm:text-sm text-white/60">
                 Supports PDF, DOCX, and TXT files
               </p>
@@ -394,7 +408,7 @@ const FileUpload = () => {
             <div className="flex flex-col items-center justify-center">
               <div className="relative w-20 h-20 sm:w-24 sm:h-24 mb-4 sm:mb-6">
                 <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-                <div 
+                <div
                   className="absolute inset-0 rounded-full border-4 border-white border-t-transparent animate-spin"
                   style={{ animationDuration: '1s' }}
                 />
@@ -438,13 +452,13 @@ const FileUpload = () => {
               </p>
 
               <div className="flex gap-1">
-                {[0, 1, 2].map((i) => (
+                {[0, 1, 2].map(i => (
                   <div
                     key={i}
                     className="w-3 h-3 rounded-full bg-white/50"
                     style={{
                       animation: 'bounce 1s infinite',
-                      animationDelay: `${i * 0.15}s`
+                      animationDelay: `${i * 0.15}s`,
                     }}
                   />
                 ))}
@@ -468,8 +482,11 @@ const FileUpload = () => {
 
             <div className="text-center mb-6 sm:mb-8">
               <p className="text-white/80 text-sm sm:text-base">
-                What would you like to do with{" "}
-                <span className="font-semibold text-white break-all">{file?.name}</span>?
+                What would you like to do with{' '}
+                <span className="font-semibold text-white break-all">
+                  {file?.name}
+                </span>
+                ?
               </p>
             </div>
 
@@ -510,17 +527,19 @@ const FileUpload = () => {
               <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                 <div
                   className={`p-2.5 sm:p-3 rounded-xl shrink-0 ${
-                    fileType === "pdf"
-                      ? "bg-rose-500/20 text-rose-300"
-                      : fileType === "docx"
-                      ? "bg-blue-500/20 text-blue-300"
-                      : "bg-emerald-500/20 text-emerald-300"
+                    fileType === 'pdf'
+                      ? 'bg-rose-500/20 text-rose-300'
+                      : fileType === 'docx'
+                        ? 'bg-blue-500/20 text-blue-300'
+                        : 'bg-emerald-500/20 text-emerald-300'
                   }`}
                 >
                   <FileText className="w-6 h-6 sm:w-8 sm:h-8" />
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold text-white text-base sm:text-lg truncate">{file?.name}</p>
+                  <p className="font-semibold text-white text-base sm:text-lg truncate">
+                    {file?.name}
+                  </p>
                   <p className="text-xs sm:text-sm text-white/60">
                     {file && (file.size / 1024).toFixed(2)} KB
                   </p>
@@ -547,7 +566,7 @@ const FileUpload = () => {
                     Uploading...
                   </span>
                 ) : (
-                  "Upload File"
+                  'Upload File'
                 )}
               </button>
               {!isAuthenticated && (

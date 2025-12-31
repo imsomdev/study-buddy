@@ -1,10 +1,11 @@
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import AuthForm from "@/components/AuthForm";
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import AuthForm from '@/components/AuthForm';
 
 export const metadata = {
-  title: "Join Now | Study Buddy",
-  description: "Create your free Study Buddy account to start generating AI-powered study materials.",
+  title: 'Join Now | Study Buddy',
+  description:
+    'Create your free Study Buddy account to start generating AI-powered study materials.',
 };
 
 export default function SignupPage() {
@@ -20,7 +21,7 @@ export default function SignupPage() {
 
       <main className="flex-grow flex items-center justify-center px-4 pt-20 pb-12">
         <div className="container max-w-7xl mx-auto flex flex-col items-center">
-            <AuthForm type="signup" />
+          <AuthForm type="signup" />
         </div>
       </main>
 

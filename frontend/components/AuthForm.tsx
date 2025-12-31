@@ -1,13 +1,20 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Loader2, Mail, Lock, User, ArrowRight, CheckCircle2 } from "lucide-react";
-import { API_ENDPOINTS } from "@/lib/api";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import {
+  Loader2,
+  Mail,
+  Lock,
+  User,
+  ArrowRight,
+  CheckCircle2,
+} from 'lucide-react';
+import { API_ENDPOINTS } from '@/lib/api';
 
 interface AuthFormProps {
-  type: "login" | "signup";
+  type: 'login' | 'signup';
 }
 
 const AuthForm = ({ type }: AuthFormProps) => {
@@ -22,45 +29,45 @@ const AuthForm = ({ type }: AuthFormProps) => {
     setError(null);
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const fullName = formData.get("fullName") as string;
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const fullName = formData.get('fullName') as string;
 
     try {
-      if (type === "signup") {
+      if (type === 'signup') {
         const response = await fetch(API_ENDPOINTS.register, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password, full_name: fullName }),
         });
 
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.detail || "Registration failed");
+          throw new Error(data.detail || 'Registration failed');
         }
-        
+
         setSuccess(true);
-        setTimeout(() => router.push("/login"), 2000);
+        setTimeout(() => router.push('/login'), 2000);
       } else {
         // Login uses x-www-form-urlencoded as per OAuth2 spec in fastapi-users
         const body = new URLSearchParams();
-        body.append("username", email);
-        body.append("password", password);
+        body.append('username', email);
+        body.append('password', password);
 
         const response = await fetch(API_ENDPOINTS.login, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
           body: body.toString(),
         });
 
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.detail || "Login failed");
+          throw new Error(data.detail || 'Login failed');
         }
 
         const data = await response.json();
-        localStorage.setItem("token", data.access_token);
-        router.push("/");
+        localStorage.setItem('token', data.access_token);
+        router.push('/');
       }
     } catch (err: any) {
       setError(err.message);
@@ -78,26 +85,30 @@ const AuthForm = ({ type }: AuthFormProps) => {
             <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-10 h-10 text-emerald-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">Account Created!</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">
+              Account Created!
+            </h2>
             <p className="text-white/70">Redirecting you to login...</p>
           </div>
         ) : (
           <>
             <div className="mb-8 text-center">
               <h1 className="text-3xl font-bold text-white mb-2">
-                {type === "login" ? "Welcome Back" : "Create Account"}
+                {type === 'login' ? 'Welcome Back' : 'Create Account'}
               </h1>
               <p className="text-white/60">
-                {type === "login" 
-                  ? "Continue your learning journey" 
-                  : "Join thousands of students worldwide"}
+                {type === 'login'
+                  ? 'Continue your learning journey'
+                  : 'Join thousands of students worldwide'}
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {type === "signup" && (
+              {type === 'signup' && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white/80 ml-1">Full Name</label>
+                  <label className="text-sm font-medium text-white/80 ml-1">
+                    Full Name
+                  </label>
                   <div className="relative group">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-white transition-colors" />
                     <input
@@ -112,7 +123,9 @@ const AuthForm = ({ type }: AuthFormProps) => {
               )}
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white/80 ml-1">Email Address</label>
+                <label className="text-sm font-medium text-white/80 ml-1">
+                  Email Address
+                </label>
                 <div className="relative group">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-white transition-colors" />
                   <input
@@ -126,7 +139,9 @@ const AuthForm = ({ type }: AuthFormProps) => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white/80 ml-1">Password</label>
+                <label className="text-sm font-medium text-white/80 ml-1">
+                  Password
+                </label>
                 <div className="relative group">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-white transition-colors" />
                   <input
@@ -154,7 +169,7 @@ const AuthForm = ({ type }: AuthFormProps) => {
                   <Loader2 className="w-6 h-6 animate-spin" />
                 ) : (
                   <>
-                    {type === "login" ? "Sign In" : "Get Started"}
+                    {type === 'login' ? 'Sign In' : 'Get Started'}
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
@@ -163,17 +178,23 @@ const AuthForm = ({ type }: AuthFormProps) => {
 
             <div className="mt-8 text-center">
               <p className="text-white/60 text-sm">
-                {type === "login" ? (
+                {type === 'login' ? (
                   <>
-                    Don&apos;t have an account?{" "}
-                    <Link href="/signup" className="text-white font-semibold hover:underline decoration-white/30 underline-offset-4">
+                    Don&apos;t have an account?{' '}
+                    <Link
+                      href="/signup"
+                      className="text-white font-semibold hover:underline decoration-white/30 underline-offset-4"
+                    >
                       Create one
                     </Link>
                   </>
                 ) : (
                   <>
-                    Already have an account?{" "}
-                    <Link href="/login" className="text-white font-semibold hover:underline decoration-white/30 underline-offset-4">
+                    Already have an account?{' '}
+                    <Link
+                      href="/login"
+                      className="text-white font-semibold hover:underline decoration-white/30 underline-offset-4"
+                    >
                       Sign In
                     </Link>
                   </>

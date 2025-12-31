@@ -6,32 +6,38 @@ const features = [
   {
     icon: FileText,
     title: 'Upload Any Document',
-    description: 'Support for PDF, DOCX, and TXT files. Simply drag and drop your study materials and we\'ll handle the rest.',
+    description:
+      "Support for PDF, DOCX, and TXT files. Simply drag and drop your study materials and we'll handle the rest.",
   },
   {
     icon: Brain,
     title: 'AI-Powered Questions',
-    description: 'Our advanced AI analyzes your content and generates relevant MCQs, short answers, and comprehension questions.',
+    description:
+      'Our advanced AI analyzes your content and generates relevant MCQs, short answers, and comprehension questions.',
   },
   {
     icon: BarChart3,
     title: 'Advanced Analytics',
-    description: 'Track your progress with detailed analytics. See which topics need more attention and improve your scores.',
+    description:
+      'Track your progress with detailed analytics. See which topics need more attention and improve your scores.',
   },
   {
     icon: Shield,
     title: 'Secure & Private',
-    description: 'Your documents are encrypted and processed securely. We never share your data with third parties.',
+    description:
+      'Your documents are encrypted and processed securely. We never share your data with third parties.',
   },
   {
     icon: Zap,
     title: 'Instant Generation',
-    description: 'Get your practice questions in seconds, not hours. Save time and focus on what matters - learning.',
+    description:
+      'Get your practice questions in seconds, not hours. Save time and focus on what matters - learning.',
   },
   {
     icon: Users,
     title: 'Collaborative Learning',
-    description: 'Share question sets with classmates and study groups. Learn together, achieve together.',
+    description:
+      'Share question sets with classmates and study groups. Learn together, achieve together.',
   },
 ];
 
@@ -45,7 +51,8 @@ const FeaturesSection = () => {
             Smart Study Tools for Everyone
           </h2>
           <p className="text-base sm:text-lg text-white/70 max-w-2xl mx-auto">
-            Transform your study materials into interactive practice tests. Our platform makes learning efficient and effective.
+            Transform your study materials into interactive practice tests. Our
+            platform makes learning efficient and effective.
           </p>
         </div>
 

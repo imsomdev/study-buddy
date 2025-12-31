@@ -28,7 +28,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 The following endpoints are defined in `lib/api.ts`:
 
 - `API_ENDPOINTS.uploadFile` - File upload endpoint
-- `API_ENDPOINTS.generateMcq` - MCQ generation endpoint  
+- `API_ENDPOINTS.generateMcq` - MCQ generation endpoint
 - `API_ENDPOINTS.mcqQuestionCount(filename)` - Get question count for a file
 - `API_ENDPOINTS.mcqQuestions(filename, questionIndex)` - Get specific question
 - `API_ENDPOINTS.validateAnswer` - Validate answer endpoint

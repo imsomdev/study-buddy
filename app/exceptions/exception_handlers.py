@@ -1,11 +1,12 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+
 from app.exceptions.custom_exceptions import (
+    FileNotFoundException,
     FileUploadException,
     FileValidationException,
-    FileNotFoundException,
-    TextExtractionException,
     LLMProcessingException,
+    TextExtractionException,
 )
 
 

@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { API_ENDPOINTS } from '@/lib/api';
-import { Trophy, Target, CheckCircle, XCircle, RotateCcw, Home } from 'lucide-react';
+import {
+  Trophy,
+  Target,
+  CheckCircle,
+  XCircle,
+  RotateCcw,
+  Home,
+} from 'lucide-react';
 
 // Define the question type based on the schema
 type Choice = {
@@ -47,17 +54,19 @@ type QuizResult = {
 
 const QuestionsPage = () => {
   const router = useRouter();
-  const [questionsData, setQuestionsData] = useState<MCQGenerationResponse | null>(null);
+  const [questionsData, setQuestionsData] =
+    useState<MCQGenerationResponse | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [validationResult, setValidationResult] = useState<AnswerValidationResponse | null>(null);
+  const [validationResult, setValidationResult] =
+    useState<AnswerValidationResponse | null>(null);
   const [totalQuestions, setTotalQuestions] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [questionsLoading, setQuestionsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Quiz tracking state
   const [quizResults, setQuizResults] = useState<QuizResult[]>([]);
   const [isQuizComplete, setIsQuizComplete] = useState(false);
@@ -96,9 +105,12 @@ const QuestionsPage = () => {
       const fetchQuestionCount = async () => {
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch(API_ENDPOINTS.mcqQuestionCount(questionsData.filename), {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-          });
+          const response = await fetch(
+            API_ENDPOINTS.mcqQuestionCount(questionsData.filename),
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+          );
           if (response.ok) {
             const count: number = await response.json();
             setTotalQuestions(count);
@@ -107,7 +119,7 @@ const QuestionsPage = () => {
           console.error('Error fetching question count:', err);
         }
       };
-      
+
       fetchQuestionCount();
     }
   }, [questionsData]);
@@ -119,11 +131,13 @@ const QuestionsPage = () => {
         try {
           const token = localStorage.getItem('token');
           const response = await fetch(API_ENDPOINTS.documents, {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
           });
           if (response.ok) {
             const docs = await response.json();
-            const doc = docs.find((d: any) => d.filename === questionsData.filename);
+            const doc = docs.find(
+              (d: any) => d.filename === questionsData.filename
+            );
             if (doc) {
               setDocumentId(doc.id);
             }
@@ -132,21 +146,31 @@ const QuestionsPage = () => {
           console.error('Error fetching document ID:', err);
         }
       };
-      
+
       fetchDocumentId();
     }
   }, [questionsData, documentId]);
 
   // Handle fetching a specific question when the index changes
   useEffect(() => {
-    if (questionsData?.filename && currentQuestionIndex >= 0 && !isQuizComplete) {
+    if (
+      questionsData?.filename &&
+      currentQuestionIndex >= 0 &&
+      !isQuizComplete
+    ) {
       const fetchQuestion = async () => {
         setQuestionsLoading(true);
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch(API_ENDPOINTS.mcqQuestions(questionsData.filename, currentQuestionIndex), {
-            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-          });
+          const response = await fetch(
+            API_ENDPOINTS.mcqQuestions(
+              questionsData.filename,
+              currentQuestionIndex
+            ),
+            {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+          );
           if (response.ok) {
             const question = await response.json();
             setQuestionsData(prevData => {
@@ -156,7 +180,9 @@ const QuestionsPage = () => {
                 updatedQuestions[currentQuestionIndex] = question;
               } else {
                 while (updatedQuestions.length < currentQuestionIndex) {
-                  updatedQuestions.push(prevData.questions[updatedQuestions.length]);
+                  updatedQuestions.push(
+                    prevData.questions[updatedQuestions.length]
+                  );
                 }
                 updatedQuestions.push(question);
               }
@@ -175,7 +201,7 @@ const QuestionsPage = () => {
           setValidationResult(null);
         }
       };
-      
+
       fetchQuestion();
     }
   }, [currentQuestionIndex, questionsData?.filename, isQuizComplete]);
@@ -187,17 +213,18 @@ const QuestionsPage = () => {
   };
 
   const handleSubmitAnswer = async () => {
-    if (!selectedChoice || !questionsData?.questions[currentQuestionIndex]) return;
+    if (!selectedChoice || !questionsData?.questions[currentQuestionIndex])
+      return;
 
     const currentQuestion = questionsData.questions[currentQuestionIndex];
-    
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(API_ENDPOINTS.validateAnswer, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           question_id: currentQuestion.id,
@@ -212,11 +239,14 @@ const QuestionsPage = () => {
         setIsAnswerSubmitted(true);
 
         // Track result locally
-        setQuizResults(prev => [...prev, {
-          questionId: currentQuestion.id,
-          isCorrect: result.is_correct,
-          selectedChoice: selectedChoice
-        }]);
+        setQuizResults(prev => [
+          ...prev,
+          {
+            questionId: currentQuestion.id,
+            isCorrect: result.is_correct,
+            selectedChoice: selectedChoice,
+          },
+        ]);
 
         // Record progress to backend
         if (documentId && token) {
@@ -225,14 +255,14 @@ const QuestionsPage = () => {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                Authorization: `Bearer ${token}`,
               },
               body: JSON.stringify({
                 document_id: documentId,
                 question_id: currentQuestion.id,
                 selected_choice: selectedChoice,
-                is_correct: result.is_correct
-              })
+                is_correct: result.is_correct,
+              }),
             });
           } catch (progressError) {
             console.error('Error recording progress:', progressError);
@@ -282,7 +312,10 @@ const QuestionsPage = () => {
   // Calculate quiz statistics
   const correctCount = quizResults.filter(r => r.isCorrect).length;
   const incorrectCount = quizResults.filter(r => !r.isCorrect).length;
-  const accuracy = quizResults.length > 0 ? Math.round((correctCount / quizResults.length) * 100) : 0;
+  const accuracy =
+    quizResults.length > 0
+      ? Math.round((correctCount / quizResults.length) * 100)
+      : 0;
 
   if (loading) {
     return (
@@ -294,7 +327,9 @@ const QuestionsPage = () => {
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center glass-card p-6 rounded-xl">
             <div className="w-12 h-12 border-t-4 border-white border-solid rounded-full animate-spin mx-auto"></div>
-            <p className="mt-3 text-base text-white/80">Loading your questions...</p>
+            <p className="mt-3 text-base text-white/80">
+              Loading your questions...
+            </p>
           </div>
         </div>
         <Footer />
@@ -313,7 +348,10 @@ const QuestionsPage = () => {
           <div className="text-center glass-card p-6 rounded-xl max-w-sm">
             <h2 className="text-xl font-bold text-red-300 mb-3">Error</h2>
             <p className="text-white/80 mb-4">{error}</p>
-            <button onClick={handleBackToDashboard} className="px-5 py-2 glass-btn text-white font-medium rounded-xl">
+            <button
+              onClick={handleBackToDashboard}
+              className="px-5 py-2 glass-btn text-white font-medium rounded-xl"
+            >
               Back to Dashboard
             </button>
           </div>
@@ -332,9 +370,16 @@ const QuestionsPage = () => {
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center glass-card p-6 rounded-xl max-w-sm">
-            <h2 className="text-xl font-bold text-white mb-3">No Questions Found</h2>
-            <p className="text-white/80 mb-4">Please generate questions first.</p>
-            <button onClick={handleBackToDashboard} className="px-5 py-2 glass-btn text-white font-medium rounded-xl">
+            <h2 className="text-xl font-bold text-white mb-3">
+              No Questions Found
+            </h2>
+            <p className="text-white/80 mb-4">
+              Please generate questions first.
+            </p>
+            <button
+              onClick={handleBackToDashboard}
+              className="px-5 py-2 glass-btn text-white font-medium rounded-xl"
+            >
               Back to Dashboard
             </button>
           </div>
@@ -355,7 +400,7 @@ const QuestionsPage = () => {
         </div>
 
         <Navbar />
-        
+
         <main className="flex-grow pt-16 pb-12 relative z-10">
           <div className="container mx-auto px-4 max-w-2xl">
             <div className="glass-card p-8 text-center">
@@ -363,77 +408,114 @@ const QuestionsPage = () => {
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg">
                 <Trophy size={40} className="text-white" />
               </div>
-              
-              <h1 className="text-3xl font-bold text-white mb-2">Quiz Complete!</h1>
-              <p className="text-white/70 mb-8">Great job finishing the quiz for {questionsData.filename}</p>
-              
+
+              <h1 className="text-3xl font-bold text-white mb-2">
+                Quiz Complete!
+              </h1>
+              <p className="text-white/70 mb-8">
+                Great job finishing the quiz for {questionsData.filename}
+              </p>
+
               {/* Stats Grid */}
               <div className="grid grid-cols-3 gap-4 mb-8">
                 <div className="glass-panel p-4 rounded-xl">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <Target size={20} className="text-cyan-300" />
                   </div>
-                  <p className="text-3xl font-bold text-white">{quizResults.length}</p>
+                  <p className="text-3xl font-bold text-white">
+                    {quizResults.length}
+                  </p>
                   <p className="text-sm text-white/60">Answered</p>
                 </div>
-                
+
                 <div className="glass-panel p-4 rounded-xl">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <CheckCircle size={20} className="text-green-400" />
                   </div>
-                  <p className="text-3xl font-bold text-green-400">{correctCount}</p>
+                  <p className="text-3xl font-bold text-green-400">
+                    {correctCount}
+                  </p>
                   <p className="text-sm text-white/60">Correct</p>
                 </div>
-                
+
                 <div className="glass-panel p-4 rounded-xl">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <XCircle size={20} className="text-red-400" />
                   </div>
-                  <p className="text-3xl font-bold text-red-400">{incorrectCount}</p>
+                  <p className="text-3xl font-bold text-red-400">
+                    {incorrectCount}
+                  </p>
                   <p className="text-sm text-white/60">Incorrect</p>
                 </div>
               </div>
-              
+
               {/* Accuracy */}
               <div className="glass-panel p-6 rounded-xl mb-8">
                 <p className="text-sm text-white/60 mb-2">Your Accuracy</p>
                 <div className="flex items-center justify-center gap-4">
                   <div className="relative w-24 h-24">
                     <svg className="w-24 h-24 transform -rotate-90">
-                      <circle cx="48" cy="48" r="40" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="none" />
-                      <circle 
-                        cx="48" cy="48" r="40" 
-                        stroke={accuracy >= 70 ? '#22c55e' : accuracy >= 40 ? '#eab308' : '#ef4444'}
-                        strokeWidth="8" 
-                        fill="none" 
+                      <circle
+                        cx="48"
+                        cy="48"
+                        r="40"
+                        stroke="rgba(255,255,255,0.1)"
+                        strokeWidth="8"
+                        fill="none"
+                      />
+                      <circle
+                        cx="48"
+                        cy="48"
+                        r="40"
+                        stroke={
+                          accuracy >= 70
+                            ? '#22c55e'
+                            : accuracy >= 40
+                              ? '#eab308'
+                              : '#ef4444'
+                        }
+                        strokeWidth="8"
+                        fill="none"
                         strokeDasharray={`${accuracy * 2.51} 251`}
                         strokeLinecap="round"
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-white">{accuracy}%</span>
+                      <span className="text-2xl font-bold text-white">
+                        {accuracy}%
+                      </span>
                     </div>
                   </div>
                   <div className="text-left">
-                    <p className={`text-lg font-semibold ${accuracy >= 70 ? 'text-green-400' : accuracy >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
-                      {accuracy >= 70 ? 'Excellent!' : accuracy >= 40 ? 'Good effort!' : 'Keep practicing!'}
+                    <p
+                      className={`text-lg font-semibold ${accuracy >= 70 ? 'text-green-400' : accuracy >= 40 ? 'text-yellow-400' : 'text-red-400'}`}
+                    >
+                      {accuracy >= 70
+                        ? 'Excellent!'
+                        : accuracy >= 40
+                          ? 'Good effort!'
+                          : 'Keep practicing!'}
                     </p>
                     <p className="text-sm text-white/60">
-                      {accuracy >= 70 ? "You've mastered this material!" : accuracy >= 40 ? "You're on the right track." : "Review the content and try again."}
+                      {accuracy >= 70
+                        ? "You've mastered this material!"
+                        : accuracy >= 40
+                          ? "You're on the right track."
+                          : 'Review the content and try again.'}
                     </p>
                   </div>
                 </div>
               </div>
-              
+
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button 
+                <button
                   onClick={handleRestartQuiz}
                   className="px-6 py-3 glass-btn hover:bg-white/20 rounded-xl flex items-center justify-center gap-2"
                 >
                   <RotateCcw size={20} /> Try Again
                 </button>
-                <button 
+                <button
                   onClick={handleBackToDashboard}
                   className="px-6 py-3 btn-primary rounded-xl flex items-center justify-center gap-2"
                 >
@@ -478,14 +560,16 @@ const QuestionsPage = () => {
       </div>
 
       <Navbar />
-      
+
       <main className="flex-grow pt-16 pb-12 relative z-10">
         <div className="container mx-auto px-4 max-w-2xl">
           {/* Header with progress */}
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-white mb-2">Practice Quiz</h1>
+            <h1 className="text-2xl font-bold text-white mb-2">
+              Practice Quiz
+            </h1>
             <p className="text-white/60 text-sm">{questionsData.filename}</p>
-            
+
             {/* Live Stats */}
             <div className="flex justify-center gap-4 mt-4">
               <div className="flex items-center gap-1 text-sm">
@@ -502,13 +586,22 @@ const QuestionsPage = () => {
           {/* Progress Bar */}
           <div className="glass-panel p-4 mb-6 rounded-xl">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-white/70">Question {currentQuestionIndex + 1} of {totalQuestions}</span>
-              <span className="text-sm text-white/70">{Math.round(((currentQuestionIndex + 1) / totalQuestions) * 100)}%</span>
+              <span className="text-sm text-white/70">
+                Question {currentQuestionIndex + 1} of {totalQuestions}
+              </span>
+              <span className="text-sm text-white/70">
+                {Math.round(
+                  ((currentQuestionIndex + 1) / totalQuestions) * 100
+                )}
+                %
+              </span>
             </div>
             <div className="w-full bg-white/10 rounded-full h-2">
-              <div 
+              <div
                 className="bg-gradient-to-r from-cyan-400 to-teal-300 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }}
+                style={{
+                  width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%`,
+                }}
               />
             </div>
           </div>
@@ -524,10 +617,10 @@ const QuestionsPage = () => {
                 <h3 className="text-lg font-semibold text-white mb-6">
                   {currentQuestion.question}
                 </h3>
-                
+
                 <div className="space-y-3 mb-6">
-                  {currentQuestion.choices.map((choice) => (
-                    <div 
+                  {currentQuestion.choices.map(choice => (
+                    <div
                       key={choice.id}
                       onClick={() => handleChoiceSelect(choice.id)}
                       className={`flex items-start p-4 rounded-xl cursor-pointer transition-all ${
@@ -537,12 +630,13 @@ const QuestionsPage = () => {
                               ? 'bg-green-500/20 border-2 border-green-400'
                               : 'bg-red-500/20 border-2 border-red-400'
                             : 'bg-white/20 border-2 border-white/50'
-                          : isAnswerSubmitted && choice.id === currentQuestion.correct_answer
+                          : isAnswerSubmitted &&
+                              choice.id === currentQuestion.correct_answer
                             ? 'bg-green-500/20 border-2 border-green-400'
                             : 'glass-choice hover:bg-white/10'
                       }`}
                     >
-                      <span 
+                      <span
                         className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm font-medium ${
                           selectedChoice === choice.id
                             ? isAnswerSubmitted
@@ -550,26 +644,33 @@ const QuestionsPage = () => {
                                 ? 'bg-green-400 text-white'
                                 : 'bg-red-400 text-white'
                               : 'bg-white text-teal-700'
-                            : isAnswerSubmitted && choice.id === currentQuestion.correct_answer
+                            : isAnswerSubmitted &&
+                                choice.id === currentQuestion.correct_answer
                               ? 'bg-green-400 text-white'
                               : 'bg-white/20 text-white'
                         }`}
                       >
                         {choice.id}
                       </span>
-                      <span className="text-white flex-grow">{choice.text}</span>
+                      <span className="text-white flex-grow">
+                        {choice.text}
+                      </span>
                     </div>
                   ))}
                 </div>
 
                 {/* Answer Feedback */}
                 {isAnswerSubmitted && validationResult && (
-                  <div className={`p-4 rounded-xl mb-6 ${isCorrect ? 'bg-green-500/20 border border-green-400/50' : 'bg-red-500/20 border border-red-400/50'}`}>
+                  <div
+                    className={`p-4 rounded-xl mb-6 ${isCorrect ? 'bg-green-500/20 border border-green-400/50' : 'bg-red-500/20 border border-red-400/50'}`}
+                  >
                     <p className="font-semibold text-white mb-2">
                       {isCorrect ? '✓ Correct!' : '✗ Incorrect'}
                     </p>
                     {validationResult.explanation && (
-                      <p className="text-white/80 text-sm">{validationResult.explanation}</p>
+                      <p className="text-white/80 text-sm">
+                        {validationResult.explanation}
+                      </p>
                     )}
                   </div>
                 )}
@@ -583,13 +684,15 @@ const QuestionsPage = () => {
                   >
                     Previous
                   </button>
-                  
+
                   {!isAnswerSubmitted ? (
                     <button
                       onClick={handleSubmitAnswer}
                       disabled={!selectedChoice}
                       className={`px-6 py-2 rounded-lg font-medium ${
-                        selectedChoice ? 'btn-primary' : 'bg-white/10 text-white/40 cursor-not-allowed'
+                        selectedChoice
+                          ? 'btn-primary'
+                          : 'bg-white/10 text-white/40 cursor-not-allowed'
                       }`}
                     >
                       Check Answer
@@ -615,7 +718,10 @@ const QuestionsPage = () => {
           </div>
 
           <div className="text-center">
-            <button onClick={handleBackToDashboard} className="text-white/60 hover:text-white text-sm">
+            <button
+              onClick={handleBackToDashboard}
+              className="text-white/60 hover:text-white text-sm"
+            >
               ← Exit Quiz
             </button>
           </div>

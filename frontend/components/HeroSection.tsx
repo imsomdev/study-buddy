@@ -1,4 +1,4 @@
-import FileUpload from "@/components/FileUpload";
+import FileUpload from '@/components/FileUpload';
 
 const HeroSection = () => {
   return (
@@ -10,10 +10,11 @@ const HeroSection = () => {
             Study Buddy
           </h1>
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 max-w-2xl mx-auto font-light px-2">
-            Upload your study materials and generate interactive MCQs in seconds. Just drag and drop.
+            Upload your study materials and generate interactive MCQs in
+            seconds. Just drag and drop.
           </p>
         </div>
-        
+
         {/* Upload Component */}
         <FileUpload />
       </div>

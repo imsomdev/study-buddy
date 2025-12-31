@@ -19,11 +19,11 @@
   --teal-700: #0f766e;
   --teal-800: #115e59;
   --teal-900: #134e4a;
-  
+
   --cyan-400: #22d3ee;
   --cyan-500: #06b6d4;
   --cyan-600: #0891b2;
-  
+
   /* Background gradient colors */
   --bg-start: #0d9488;
   --bg-mid: #14b8a6;
@@ -31,7 +31,8 @@
 }
 
 /* Base html and body styles */
-html, body {
+html,
+body {
   overflow-x: hidden;
   width: 100%;
   max-width: 100vw;
@@ -54,7 +55,7 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 24px;
-  box-shadow: 
+  box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
@@ -79,7 +80,7 @@ body {
 .glass-upload.active {
   background: rgba(255, 255, 255, 0.12);
   border-color: rgba(255, 255, 255, 0.5);
-  box-shadow: 
+  box-shadow:
     0 0 0 4px rgba(255, 255, 255, 0.1),
     0 20px 40px rgba(0, 0, 0, 0.2);
 }
@@ -115,7 +116,11 @@ body {
 
 /* Primary CTA button */
 .btn-primary {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.25) 0%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
@@ -127,7 +132,11 @@ body {
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.2) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.2) 100%
+  );
   transform: translateY(-3px);
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
 }
@@ -138,7 +147,8 @@ body {
 
 /* Floating animation for decorative elements */
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
   50% {
@@ -157,7 +167,8 @@ body {
 
 /* Subtle glow pulse */
 @keyframes glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
   }
   50% {
@@ -171,7 +182,8 @@ body {
 
 /* Upload icon bounce */
 @keyframes bounce-subtle {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -195,9 +207,9 @@ body {
 
 .progress-shimmer {
   background: linear-gradient(
-    90deg, 
-    rgba(255, 255, 255, 0.1) 0%, 
-    rgba(255, 255, 255, 0.3) 50%, 
+    90deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.3) 50%,
     rgba(255, 255, 255, 0.1) 100%
   );
   background-size: 200% 100%;
@@ -223,13 +235,21 @@ body {
    ============================================ */
 
 .toast-success {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.9) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.9) 0%,
+    rgba(5, 150, 105, 0.9) 100%
+  );
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .toast-error {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(220, 38, 38, 0.9) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(239, 68, 68, 0.9) 0%,
+    rgba(220, 38, 38, 0.9) 100%
+  );
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }

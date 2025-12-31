@@ -1,10 +1,11 @@
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import AuthForm from "@/components/AuthForm";
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
+import AuthForm from '@/components/AuthForm';
 
 export const metadata = {
-  title: "Login | Study Buddy",
-  description: "Login to your Study Buddy account to access your personalized learning journey.",
+  title: 'Login | Study Buddy',
+  description:
+    'Login to your Study Buddy account to access your personalized learning journey.',
 };
 
 export default function LoginPage() {
@@ -20,7 +21,7 @@ export default function LoginPage() {
 
       <main className="flex-grow flex items-center justify-center px-4 pt-20 pb-12">
         <div className="container max-w-7xl mx-auto flex flex-col items-center">
-            <AuthForm type="login" />
+          <AuthForm type="login" />
         </div>
       </main>
 

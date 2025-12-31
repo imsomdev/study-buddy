@@ -6,27 +6,33 @@ import { ChevronDown } from 'lucide-react';
 const faqs = [
   {
     question: 'What file formats are supported?',
-    answer: 'We currently support PDF, DOCX (Microsoft Word), and TXT files. We\'re working on adding support for more formats including images and handwritten notes.',
+    answer:
+      "We currently support PDF, DOCX (Microsoft Word), and TXT files. We're working on adding support for more formats including images and handwritten notes.",
   },
   {
     question: 'How accurate are the generated questions?',
-    answer: 'Our AI is trained on educational content and generates highly relevant questions. Each question includes an explanation to help you understand the correct answer. The accuracy improves based on the quality and clarity of your input document.',
+    answer:
+      'Our AI is trained on educational content and generates highly relevant questions. Each question includes an explanation to help you understand the correct answer. The accuracy improves based on the quality and clarity of your input document.',
   },
   {
     question: 'Is my data secure and private?',
-    answer: 'Absolutely. Your documents are encrypted during upload and processing. We never share your data with third parties, and you can delete your documents at any time.',
+    answer:
+      'Absolutely. Your documents are encrypted during upload and processing. We never share your data with third parties, and you can delete your documents at any time.',
   },
   {
     question: 'Can I share questions with my study group?',
-    answer: 'Yes! You can generate shareable links to your question sets. Your classmates can practice using the same questions without needing to upload the document again.',
+    answer:
+      'Yes! You can generate shareable links to your question sets. Your classmates can practice using the same questions without needing to upload the document again.',
   },
   {
     question: 'How many questions can I generate?',
-    answer: 'There\'s no limit to the number of questions you can generate. The number of questions is based on the content length and complexity of your document.',
+    answer:
+      "There's no limit to the number of questions you can generate. The number of questions is based on the content length and complexity of your document.",
   },
   {
     question: 'What types of questions are generated?',
-    answer: 'We primarily generate multiple-choice questions (MCQs) with 4 options each. We\'re expanding to include true/false, fill-in-the-blank, and short answer questions soon.',
+    answer:
+      "We primarily generate multiple-choice questions (MCQs) with 4 options each. We're expanding to include true/false, fill-in-the-blank, and short answer questions soon.",
   },
 ];
 

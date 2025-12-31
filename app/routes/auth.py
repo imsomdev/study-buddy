@@ -1,25 +1,27 @@
 import logging
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta, timezone
+
 from app.database.config import get_db
 from app.database.models import User
 from app.schemas.auth import (
-    SignupRequest,
+    ChangePasswordRequest,
     LoginRequest,
+    MessageResponse,
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    SignupRequest,
     TokenResponse,
     UserResponse,
-    PasswordResetRequest,
-    PasswordResetConfirm,
-    ChangePasswordRequest,
-    MessageResponse,
 )
 from app.services.auth_service import (
-    hash_password,
-    verify_password,
     create_access_token,
     create_reset_token,
     get_current_active_user,
+    hash_password,
+    verify_password,
 )
 
 logger = logging.getLogger(__name__)

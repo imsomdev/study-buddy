@@ -1,24 +1,27 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-from sqlalchemy import func
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from app.auth.auth import current_active_user
 from app.database.config import get_db
 from app.database.models import (
-    UserProgress,
-    StudyDocument,
     MCQQuestion as DBMCQQuestion,
+)
+from app.database.models import (
+    StudyDocument,
     User,
+    UserProgress,
 )
 from app.schemas.progress import (
-    ProgressRecordRequest,
-    ProgressRecordResponse,
     DocumentProgressResponse,
     OverallStatsResponse,
-    QuestionProgressItem,
+    ProgressRecordRequest,
+    ProgressRecordResponse,
     QuestionHistoryResponse,
+    QuestionProgressItem,
 )
-from app.auth.auth import current_active_user
 
 logger = logging.getLogger(__name__)
 

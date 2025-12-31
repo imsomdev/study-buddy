@@ -6,35 +6,35 @@ from typing import List
 from urllib.parse import unquote
 
 from fastapi import APIRouter, Depends, File, Request, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
+from app.auth.auth import current_active_user
 from app.constants.file_types import ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
 from app.constants.paths import UPLOAD_DIRECTORY
 from app.database.config import get_db
 from app.database.models import MCQQuestion as DBMCQQuestion
-from app.database.models import StudyDocument
+from app.database.models import StudyDocument, User
 from app.exceptions.custom_exceptions import (
     FileUploadException,
     FileValidationException,
     LLMProcessingException,
 )
 from app.schemas.study import (
+    AnswerValidationRequest,
+    AnswerValidationResponse,
+    FlashcardGenerationResponse,
+    FlashcardResponse,
     MCQGenerationResponse,
     MCQQuestion,
     MCQRequest,
     UploadResponse,
-    AnswerValidationRequest,
-    AnswerValidationResponse,
-    FlashcardResponse,
-    FlashcardGenerationResponse,
 )
 from app.services.extraction_service import extract_text_from_file
 from app.services.llm_service import (
-    generate_mcq_questions_from_pages,
     generate_flashcards_from_pages,
+    generate_mcq_questions_from_pages,
 )
-from app.auth.auth import current_active_user
-from app.database.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -441,6 +441,7 @@ async def validate_answer(
 
     # Parse the choices from JSON strings back to proper format
     import json
+
     from app.schemas.study import MCQChoice
 
     try:
@@ -530,6 +531,7 @@ async def get_specific_mcq_question(
 
     # Parse the choices from JSON strings back to proper format
     import json
+
     from app.schemas.study import MCQChoice
 
     try:
@@ -608,9 +610,6 @@ async def get_mcq_question_count(
     return question_count
 
 
-from fastapi.responses import FileResponse
-
-
 @router.get("/files/{filename}")
 async def get_file(
     filename: str,
@@ -660,7 +659,7 @@ async def get_documents(
     # Get all documents for this user
     documents = (
         db.query(StudyDocument)
-        .filter(StudyDocument.user_id == user.id, StudyDocument.is_active == True)
+        .filter(StudyDocument.user_id == user.id, StudyDocument.is_active)
         .order_by(StudyDocument.created_at.desc())
         .all()
     )
