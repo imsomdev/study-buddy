@@ -44,3 +44,8 @@ app.include_router(progress.router, prefix="/api/v1", tags=["progress"])
 @app.get("/")
 async def root():
     return {"message": "Welcome to Study Buddy API"}
+
+
+@app.get("/hi")
+async def hi():
+    return {"message": "hi"}
