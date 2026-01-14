@@ -32,6 +32,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/study-buddy
+            cd /var/www/study-buddy
             git pull origin main
             docker compose up -d --build

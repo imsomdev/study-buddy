@@ -79,7 +79,7 @@ Migrations are **automatic**. The `entrypoint.sh` script runs `alembic upgrade h
 
 If setting up manually on a new server:
 
-1. `git clone ...`
+1. `git clone ...` into `/var/www/study-buddy`
 2. Create `.env` file with production values:
    - `NEXT_PUBLIC_API_BASE_URL=https://studybuddy.somdevxdev.space/api/v1`
 3. `docker compose up -d --build`
