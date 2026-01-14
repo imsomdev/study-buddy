@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: Add logging config, formatting tools, and update gitignore\n\n- Add app/logging_config.py for file-based logging setup\n- Add frontend ESLint config and Prettier settings\n- Add Husky pre-commit hook for frontend\n- Add format-files.sh utility script\n- Add LOGGING.md documentation\n- Add tsconfig.tsbuildinfo to gitignore\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: Add logging config, formatting tools, and update gitignore\n\n- Add app/logging_config.py for file-based logging setup\n- Add frontend ESLint config and Prettier settings\n- Add Husky pre-commit hook for frontend\n- Add format-files.sh utility script\n- Add LOGGING.md documentation\n- Add tsconfig.tsbuildinfo to gitignore\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose logs:*)"
     ]
   }
 }

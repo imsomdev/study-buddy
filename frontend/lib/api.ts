@@ -1,11 +1,9 @@
 // lib/api.ts
 // Centralized API configuration
 
-// Default to localhost:8000, but allow override via environment variable
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.API_BASE_URL ||
-  'http://localhost:8080';
+// Use empty string for relative URLs (works with reverse proxy)
+// Or set NEXT_PUBLIC_API_BASE_URL for direct backend access
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
 
 // API endpoints
 export const API_ENDPOINTS = {
