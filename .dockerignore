@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+.env
+.git/
+.gitignore
+.ruff_cache/
+studybuddy.db
+frontend/
+node_modules/
+uploads/
