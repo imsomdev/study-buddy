@@ -1,15 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.logging_config import setup_logging
+
+# Initialize logging immediately
+setup_logging()
+
 from app.auth.auth import auth_backend, fastapi_users
 from app.database import create_tables
 from app.exceptions.exception_handlers import setup_exception_handlers
-from app.logging_config import setup_logging
 from app.routes import progress, study
 from app.schemas.user import UserCreate, UserRead
-
-# Initialize logging
-setup_logging()
 
 app = FastAPI(
     title="Study Buddy API", description="API for managing study resources and notes"
