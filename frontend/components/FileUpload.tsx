@@ -54,6 +54,10 @@ const FileUpload = () => {
   } | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  const [uploadedFileData, setUploadedFileData] = useState<{
+    filename: string;
+  } | null>(null);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     setIsAuthenticated(!!token);
@@ -193,6 +197,7 @@ const FileUpload = () => {
       if (response.ok) {
         const result = await response.json();
         console.log('Upload successful:', result);
+        setUploadedFileData({ filename: result.filename });
         setNotification({
           type: 'success',
           message: `${file.name} uploaded successfully!`,
@@ -230,7 +235,13 @@ const FileUpload = () => {
   };
 
   const handleStartJourney = async () => {
-    if (!file) return;
+    if (!uploadedFileData) {
+      setNotification({
+        type: 'error',
+        message: 'Please upload a file first.',
+      });
+      return;
+    }
 
     if (!isAuthenticated) {
       router.push('/login');
@@ -240,26 +251,10 @@ const FileUpload = () => {
     setIsGeneratingQuestions(true);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
       const token =
         typeof window !== 'undefined' ? localStorage.getItem('token') : null;
       const authHeader: Record<string, string> = {};
       if (token) authHeader['Authorization'] = `Bearer ${token}`;
-
-      const uploadResponse = await fetch(API_ENDPOINTS.uploadFile, {
-        method: 'POST',
-        headers: authHeader,
-        body: formData,
-      });
-
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        throw new Error(errorData.detail || 'Upload failed');
-      }
-
-      const uploadResult = await uploadResponse.json();
 
       const generateResponse = await fetch(API_ENDPOINTS.generateMcq, {
         method: 'POST',
@@ -268,7 +263,7 @@ const FileUpload = () => {
           ...authHeader,
         },
         body: JSON.stringify({
-          filename: uploadResult.filename,
+          filename: uploadedFileData.filename,
           num_questions: 5,
         }),
       });
