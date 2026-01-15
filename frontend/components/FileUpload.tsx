@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { API_BASE_URL, API_ENDPOINTS } from '../lib/api';
+import { API_ENDPOINTS } from '../lib/api';
 import {
   Upload,
   FileText,
@@ -268,7 +268,7 @@ const FileUpload = () => {
           ...authHeader,
         },
         body: JSON.stringify({
-          file_url: uploadResult.file_url,
+          filename: uploadResult.filename,
           num_questions: 5,
         }),
       });

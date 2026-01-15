@@ -4,7 +4,6 @@ import os
 import threading
 import uuid
 from typing import List
-from urllib.parse import unquote
 
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from fastapi.responses import RedirectResponse
@@ -142,13 +141,13 @@ async def generate_mcq_questions(
     Returns questions from the first page immediately, then continues processing remaining pages in the background.
 
     Args:
-        request: Contains file_url (to extract filename) and num_questions (1-10)
+        request: Contains filename and num_questions (1-10)
 
     Returns:
         MCQGenerationResponse: JSON response with MCQ questions from the first page
     """
-    # Extract filename from the URL
-    filename = unquote(request.file_url.split("/")[-1])
+    # Use filename directly from request
+    filename = request.filename
     logger.info(
         f"POST /generate-mcq/ - user_id: {user.id}, filename: {filename}, num_questions: {request.num_questions}"
     )

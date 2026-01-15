@@ -70,7 +70,7 @@ class MCQGenerationResponse(BaseModel):
 
 
 class MCQRequest(BaseModel):
-    file_url: str
+    filename: str
     num_questions: int = 3  # Default value, optional
 
 
