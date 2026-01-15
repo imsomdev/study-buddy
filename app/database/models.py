@@ -34,8 +34,7 @@ class StudyDocument(Base):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, index=True, nullable=False)
     content_type = Column(String, nullable=False)
-    file_path = Column(String, nullable=False)
-    file_url = Column(String, nullable=False)
+    file_path = Column(String, nullable=False)  # R2 object key
     page_count = Column(Integer, nullable=True)
     user_id = Column(Integer, ForeignKey("user.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

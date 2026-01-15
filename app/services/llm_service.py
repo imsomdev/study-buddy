@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 from typing import List
 
@@ -11,6 +12,8 @@ from dotenv import load_dotenv
 from app.schemas.study import MCQChoice, MCQQuestion
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 # Initialize Cerebras client with API key from environment variable
 client = AsyncCerebras(
@@ -110,11 +113,11 @@ async def generate_mcq_questions_from_pages(
 
         except json.JSONDecodeError:
             # Handle case where API doesn't return valid JSON
-            print(f"Error: Could not parse JSON response for page {page_idx}")
+            logger.error(f"Error: Could not parse JSON response for page {page_idx}")
             continue
         except Exception as e:
             # Handle other API errors
-            print(f"Error calling Cloud API for page {page_idx}: {str(e)}")
+            logger.error(f"Error calling Cloud API for page {page_idx}: {str(e)}")
             continue
 
         # Small delay to avoid rate limiting
@@ -200,10 +203,10 @@ async def generate_flashcards_from_pages(
                 )
 
         except json.JSONDecodeError:
-            print(f"Error: Could not parse JSON response for page {page_idx}")
+            logger.error(f"Error: Could not parse JSON response for page {page_idx}")
             continue
         except Exception as e:
-            print(f"Error calling Cloud API for page {page_idx}: {str(e)}")
+            logger.error(f"Error calling Cloud API for page {page_idx}: {str(e)}")
             continue
 
         # Small delay to avoid rate limiting

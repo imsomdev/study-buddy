@@ -10,7 +10,6 @@ class UploadResponse(BaseModel):
 
     filename: str
     content_type: str
-    file_url: str
     message: str = "File uploaded successfully"
 
 
@@ -71,7 +70,7 @@ class MCQGenerationResponse(BaseModel):
 
 
 class MCQRequest(BaseModel):
-    file_url: str
+    filename: str
     num_questions: int = 3  # Default value, optional
 
 

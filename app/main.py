@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.logging_config import setup_logging
+
+# Initialize logging immediately
+setup_logging()
+
 from app.auth.auth import auth_backend, fastapi_users
 from app.database import create_tables
 from app.exceptions.exception_handlers import setup_exception_handlers
