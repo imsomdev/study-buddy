@@ -2,16 +2,16 @@ import asyncio
 import logging
 import os
 import threading
+import uuid
 from typing import List
 from urllib.parse import unquote
 
-from fastapi import APIRouter, Depends, File, Request, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.auth.auth import current_active_user
 from app.constants.file_types import ALLOWED_EXTENSIONS, ALLOWED_MIME_TYPES
-from app.constants.paths import UPLOAD_DIRECTORY
 from app.database.config import get_db
 from app.database.models import MCQQuestion as DBMCQQuestion
 from app.database.models import StudyDocument, User
@@ -35,6 +35,7 @@ from app.services.llm_service import (
     generate_flashcards_from_pages,
     generate_mcq_questions_from_pages,
 )
+from app.services.storage_service import storage_service
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,6 @@ router = APIRouter(dependencies=[Depends(current_active_user)])
 )
 async def create_upload_file(
     file: UploadFile = File(...),
-    request: Request = Request,
     db: Session = Depends(get_db),
     user: User = Depends(current_active_user),
 ):
@@ -78,25 +78,33 @@ async def create_upload_file(
         )
 
     safe_filename = os.path.basename(file.filename)
-    file_location = os.path.join(UPLOAD_DIRECTORY, safe_filename)
-
-    if not os.path.exists(UPLOAD_DIRECTORY):
-        os.makedirs(UPLOAD_DIRECTORY)
+    # Generate unique R2 object key with user namespace
+    file_uuid = str(uuid.uuid4())
+    object_key = f"uploads/{user.id}/{file_uuid}_{safe_filename}"
 
     try:
         contents = await file.read()
-        with open(file_location, "wb") as f:
-            f.write(contents)
-        file_url = f"{request.base_url}api/v1/files/{safe_filename}"
-        pages_text = extract_text_from_file(UPLOAD_DIRECTORY + "/" + safe_filename)
+
+        # Upload to R2
+        await storage_service.upload_file(
+            file_content=contents,
+            object_key=object_key,
+            content_type=file.content_type,
+        )
+
+        # Extract text using temp file downloaded from R2
+        async with storage_service.download_to_temp_file(
+            object_key, suffix=file_extension
+        ) as temp_path:
+            pages_text = extract_text_from_file(temp_path)
+
         page_count = len(pages_text) if pages_text else 0
 
         # Create a new study document record in the database
         db_document = StudyDocument(
             filename=safe_filename,
             content_type=file.content_type,
-            file_path=file_location,
-            file_url=file_url,
+            file_path=object_key,  # R2 object key
             page_count=page_count,
             user_id=user.id,
         )
@@ -120,7 +128,6 @@ async def create_upload_file(
     return UploadResponse(
         filename=safe_filename,
         content_type=file.content_type,
-        file_url=file_url,
     )
 
 
@@ -131,12 +138,11 @@ async def generate_mcq_questions(
     user: User = Depends(current_active_user),
 ):
     """
-    Generate MCQ questions from an existing file URL.
+    Generate MCQ questions from an existing document.
     Returns questions from the first page immediately, then continues processing remaining pages in the background.
 
     Args:
-        file_url: The URL of the existing document file to extract text from and generate questions
-        num_questions: Number of questions to generate per page (1-10)
+        request: Contains file_url (to extract filename) and num_questions (1-10)
 
     Returns:
         MCQGenerationResponse: JSON response with MCQ questions from the first page
@@ -157,18 +163,7 @@ async def generate_mcq_questions(
             f"File extension '{file_extension}' is not allowed. Allowed extensions are: {', '.join(ALLOWED_EXTENSIONS)}"
         )
 
-    # Construct the full file path
-    file_location = os.path.join(UPLOAD_DIRECTORY, filename)
-
     try:
-        # Check if the file exists
-        if not os.path.exists(file_location):
-            logger.warning(f"POST /generate-mcq/ - File not found: {file_location}")
-            raise FileValidationException(f"File not found: {file_location}")
-
-        # Extract text from the existing file
-        pages_text = extract_text_from_file(file_location)
-
         # Get the document from the database based on the filename and user
         db_document = (
             db.query(StudyDocument)
@@ -184,6 +179,12 @@ async def generate_mcq_questions(
             raise FileValidationException(
                 f"Document not found or access denied: {filename}"
             )
+
+        # Download from R2 to temp file and extract text
+        async with storage_service.download_to_temp_file(
+            db_document.file_path, suffix=file_extension
+        ) as temp_path:
+            pages_text = extract_text_from_file(temp_path)
 
         # Process first page and return results immediately
         first_page_questions = []
@@ -617,7 +618,7 @@ async def get_file(
     db: Session = Depends(get_db),
 ):
     """
-    Serve uploaded files securely, ensuring the user owns the file.
+    Serve uploaded files securely via presigned R2 URL.
     """
     logger.info(f"GET /files/{filename} - user_id: {user.id}")
 
@@ -633,13 +634,11 @@ async def get_file(
         )
         raise FileValidationException("File not found or access denied")
 
-    file_path = os.path.join(UPLOAD_DIRECTORY, filename)
-    if not os.path.exists(file_path):
-        logger.error(f"GET /files/{filename} - File not found on disk: {file_path}")
-        raise FileValidationException("File not found on disk")
+    # Generate presigned URL and redirect
+    presigned_url = await storage_service.get_presigned_url(db_document.file_path)
 
-    logger.info(f"GET /files/{filename} - Serving file for user_id: {user.id}")
-    return FileResponse(file_path)
+    logger.info(f"GET /files/{filename} - Redirecting to R2 for user_id: {user.id}")
+    return RedirectResponse(url=presigned_url, status_code=307)
 
 
 @router.get("/documents", response_model=List[dict])
@@ -751,16 +750,15 @@ async def generate_flashcards(
             message="Flashcards retrieved from cache",
         )
 
-    # Generate new flashcards
-    file_location = os.path.join(UPLOAD_DIRECTORY, filename)
-
-    if not os.path.exists(file_location):
-        logger.error(f"POST /generate-flashcards/{filename} - File not found on disk")
-        raise FileValidationException(f"File not found on disk: {filename}")
+    # Generate new flashcards - download from R2 to temp file
+    file_extension = os.path.splitext(filename)[1].lower()
 
     try:
-        # Extract text from the file
-        pages_text = extract_text_from_file(file_location)
+        # Download from R2 and extract text
+        async with storage_service.download_to_temp_file(
+            db_document.file_path, suffix=file_extension
+        ) as temp_path:
+            pages_text = extract_text_from_file(temp_path)
 
         if not pages_text:
             logger.warning(
